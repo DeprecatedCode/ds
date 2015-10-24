@@ -143,7 +143,7 @@ x: {} {a::, b: b, c: 3}
 
 ```bash
 Person: {
-  firstName: 'Lady',
+  firstName: 'Lady'
   lastName: 'MacBeth'
   
   print get: {
