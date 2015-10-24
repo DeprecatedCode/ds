@@ -43,7 +43,7 @@ All words represent symbol names.
 
 ### Scope Rules
 
-1. The entire file starts out as a blank scope. Any properties defined are created in that scope. For example:
+##### 1. The entire file starts out as a blank scope. Any properties defined are created in that scope. For example:
 
 ```bash
 a: 1
@@ -53,7 +53,7 @@ a @System.print
 # 1
 ```
 
-2. Any first-level child scopes share the scope in which they are invoked. For example:
+##### 2. Any first-level child scopes share the scope in which they are invoked. For example:
 
 ```bash
 x: {a: 1}  # Read: x is something that sets a to 1 on any scope
@@ -67,7 +67,7 @@ x.a @System.print
 # undefined
 ```
 
-3. Any scope pairs applied to each other are automatically isolated from the current scope. For example:
+##### 3. Any scope pairs applied to each other are automatically isolated from the current scope. For example:
 
 ```bash
 x: {a: 1}  # Read: x is something that sets a to 1 on any scope
@@ -81,7 +81,7 @@ y: {} x    # Read: create a new scope since we are not invoking based on the par
 # 1
 ```
 
-4. Scopes are not invoked until used. For example:
+##### 4. Scopes are not invoked until used. For example:
 
 ```bash
 x: {a: 1, 2 @System.print}
@@ -92,7 +92,7 @@ x: {a: 1, 2 @System.print}
 # 1
 ```
 
-5. Two scopes can be merged by applying the second to the first. For example:
+##### 5. Two scopes can be merged by applying the second to the first. For example:
 
 x: {a: 1}
 y: {b: 2}
@@ -106,7 +106,7 @@ q z     # Read: execute z in the context of q
 # 1
 # 2
 
-6. Any scope created within another scope has first-level access to the properties created in the parent. But it cannot create properties in the parent. For example: 
+##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it cannot create properties in the parent. For example: 
 
 ```bash
 a: 1
@@ -125,7 +125,7 @@ x: {} {a::, b: b, c: 3}
 # 1
 ```
 
-7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. For example:
+##### 7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. For example:
 
 ```bash
 {name: 'Jacob'} {name @System.print}
@@ -133,7 +133,7 @@ x: {} {a::, b: b, c: 3}
 # Jacob
 ```
 
-8: The second scope block can modify properties created in the first, as they are executed in order. For example:
+##### 8: The second scope block can modify properties created in the first, as they are executed in order. For example:
 
 ```bash
 person: {
