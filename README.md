@@ -115,11 +115,11 @@ sarah: 'Sarah' Person
 
 bob: {salary: 40000, name: 'Bob'} Employee
 bob.salary: 50000
-10000 bob.raiseSalary
+15000 bob.raiseSalary
 
 sarah.description @system.print
 bob.description @system.print
 
 # Person: Sarah
-# Employee: Bob making 50000 per year
+# Employee: Bob making 65000 per year
 ```
