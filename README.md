@@ -162,6 +162,7 @@ violet.print
 
 ##### 9. Any logic blocks returned inside another logic block are now bound to the scope in which they were accessed. For example:
 
+```bash
 x: {a: 1, {a + 1}}
 y: {a: 5} x
 z: {q: {a + 2}, q}
