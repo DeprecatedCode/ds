@@ -128,8 +128,6 @@ x: {} {a::, b: b, c: 3}
 # 1
 # undefined
 # undefined
-
-# 1
 ```
 
 ##### 7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. For example:
