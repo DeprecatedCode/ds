@@ -15,7 +15,7 @@ Default Script
 
 ### Symbols
 
-All words represent Symbols.
+All words represent symbol names.
 
 ### Operations
 
@@ -25,11 +25,15 @@ All words represent Symbols.
 
 `,` represents separation.
 
+`^` represents terminal raise.
+
+`=` represents receive raised event.
+
 `?` represents condition.
 
 `@` represents named injection.
 
-`<, <=, ==, >=, >` represents comparison.
+`<, <=, ==, !=, >=, >` represents comparison.
 
 `and, or, xor, not, nand, nor, xnor` represents boolean logic.
 
@@ -67,4 +71,23 @@ AddFour: {a: 4, Adder}
 {b: 6} AddFour @system.print
 
 # 10
+```
+
+```js
+ValidateName: {
+  @name @type != 'string' ? 'Name must be a string' @TypeError ^
+  @name @length < 5       ? 'Name must be at least 5 characters long' @ValueError ^
+}
+
+= @TypeError {
+  @error.message @system.print
+}
+
+= @ValueError {
+  `There was an error with the name: ${@error.message}` @system.print
+}
+
+{name: 'Bob'} ValidateName
+
+'Success, the name is ok' @system.print
 ```
