@@ -75,8 +75,8 @@ AddFour: {a: 4, Adder}
 
 ```js
 ValidateName: {
-  name @type != 'string' ? 'Name must be a string' @TypeError ^
-  name @length < 5       ? 'Name must be at least 5 characters long' @ValueError ^
+  name @String.isInstanceOf ?: 'Name must be a string' @TypeError ^
+  name @length < 5          ?  'Name must be at least 5 characters long' @ValueError ^
 }
 
 = @TypeError {
