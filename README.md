@@ -5,7 +5,7 @@ Default Script
 
 ### Blocks
 
-`{ ... }` represents deferred scope.
+`{ ... }` represents logic.
 
 `( ... )` represents grouping.
 
@@ -53,7 +53,7 @@ a @System.print
 # 1
 ```
 
-##### 2. Any first-level child scopes share the scope in which they are invoked. For example:
+##### 2. Any logic blocks share the scope in which they are invoked. For example:
 
 ```bash
 x: {a: 1}  # Read: x is something that sets a to 1 on any scope
@@ -67,7 +67,7 @@ x.a @System.print
 # undefined
 ```
 
-##### 3. Any scope pairs applied to each other are automatically isolated from the current scope. For example:
+##### 3. Any logic block pairs applied to each other are automatically isolated from the current scope. For example:
 
 ```bash
 x: {a: 1}  # Read: x is something that sets a to 1 on any scope
@@ -81,7 +81,7 @@ y: {} x    # Read: create a new scope since we are not invoking based on the par
 # 1
 ```
 
-##### 4. Scopes are not invoked until used. For example:
+##### 4. Logic blocks are not invoked until used. For example:
 
 ```bash
 x: {a: 1, 2 @System.print}
@@ -92,14 +92,14 @@ x: {a: 1, 2 @System.print}
 # 1
 ```
 
-##### 5. Two scopes can be merged by applying the second to the first. For example:
+##### 5. Scopes can be continually updated by applying additional logic blocks. For example:
 
 ```bash
 x: {a: 1}
 y: {b: 2}
 z: {c: 3}
 
-q: x y  # Read: create q based on x and y
+q: x y  # Read: create scope q based on x and y
 q z     # Read: execute z in the context of q, modifying q
 @ z     # Read: execute z in the current context, modifying it
 
@@ -113,7 +113,7 @@ q z     # Read: execute z in the context of q, modifying q
 # 3
 ```
 
-##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it cannot create properties in the parent. For example: 
+##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it will not create properties in the parent, because it is isolated. For example: 
 
 ```bash
 a: 1
@@ -130,7 +130,7 @@ x: {} {a::, b: b, c: 3}
 # undefined
 ```
 
-##### 7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. The new scope will be returned and can be continually chained. For example:
+##### 7. The new scope will be returned by the operation of two logic blocks and can be continually chained. For example:
 
 ```bash
 {name: 'Jacob'} {name @System.print} {name: `Superhero ${name}`} {name @System.print}
@@ -139,7 +139,7 @@ x: {} {a::, b: b, c: 3}
 # Superhero Jacob
 ```
 
-##### 8: A middle scope will not be changed upon modification. For example:
+##### 8: The logic blocks themselves will not be changed upon invocation. For example:
 
 ```bash
 Person: {
@@ -153,7 +153,7 @@ Person: {
 
 violet: {} Person {firstName: 'Violet'}
 
-person.print
+({} Person).print
 violet.print
 
 # Lady MacBeth
