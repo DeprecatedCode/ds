@@ -130,12 +130,13 @@ x: {} {a::, b: b, c: 3}
 # undefined
 ```
 
-##### 7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. For example:
+##### 7. A deferred scope block is executed by placing another deferred scope block next to it. These share scope as if they were the same object. The new scope will be returned and can be continually chained. For example:
 
 ```bash
-{name: 'Jacob'} {name @System.print}
+{name: 'Jacob'} {name @System.print} {name: `Superhero ${name}`} {name @System.print}
 
 # Jacob
+# Superhero Jacob
 ```
 
 ##### 8: The second scope block can modify properties created in the first, as they are executed in order. For example:
