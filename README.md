@@ -80,14 +80,16 @@ ValidateName: {
 }
 
 = @TypeError {
-  @error.message @system.print
+  @it.message @system.print
 }
 
 = @ValueError {
-  `There was an error with the name: ${@error.message}` @system.print
+  `There was an error with the name: ${@it.message}` @system.print
 }
 
 {name: 'Bob'} ValidateName
 
 'Success, the name is ok' @system.print
+
+# There was an error with the name: Name must be at least 5 characters long
 ```
