@@ -94,6 +94,7 @@ x: {a: 1, 2 @System.print}
 
 ##### 5. Two scopes can be merged by applying the second to the first. For example:
 
+```bash
 x: {a: 1}
 y: {b: 2}
 z: {c: 3}
@@ -110,6 +111,7 @@ q z     # Read: execute z in the context of q, modifying q
 # undefined
 # undefined
 # 3
+```
 
 ##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it cannot create properties in the parent. For example: 
 
