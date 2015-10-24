@@ -47,7 +47,7 @@ All words represent symbol names.
 
 ```js
 Hello: {
-  ['Hello', @what].each {
+  ['Hello', what].each {
     @it @system.print
   }
 }
@@ -64,7 +64,7 @@ what: 'Planet', Hello
 ```
 
 ```js
-Adder: {@a + @b}
+Adder: {a + b}
 
 AddFour: {a: 4, Adder}
 
@@ -75,8 +75,8 @@ AddFour: {a: 4, Adder}
 
 ```js
 ValidateName: {
-  @name @type != 'string' ? 'Name must be a string' @TypeError ^
-  @name @length < 5       ? 'Name must be at least 5 characters long' @ValueError ^
+  name @type != 'string' ? 'Name must be a string' @TypeError ^
+  name @length < 5       ? 'Name must be at least 5 characters long' @ValueError ^
 }
 
 = @TypeError {
