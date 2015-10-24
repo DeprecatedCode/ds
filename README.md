@@ -99,9 +99,9 @@ Person: {
   name: @it
 }
 
-Employee Person: {
+Person Employee: {
 }
 
-bob Employee: 'Bob'
+Employee bob: 'Bob'
 bob.salary: 50000
 ```
