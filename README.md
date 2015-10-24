@@ -52,6 +52,8 @@ All words represent symbol names.
 
 `.` represents property.
 
+`:` represents assignment.
+
 `+, -, *, /` represents arithmetic.
 
 `,` represents separation.
@@ -60,13 +62,38 @@ All words represent symbol names.
 
 `=` represents receive raised event.
 
-`?` represents condition.
+`??` represents true condition.
+
+`?!` represents false condition.
 
 `@` represents named injection.
 
 `<, <=, ==, !=, >=, >` represents comparison.
 
-`and, or, xor, not, nand, nor, xnor` represents boolean logic.
+`&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT).
+
+### Boolean Logic Truth Table
+
+| A | B | Syntax | Result | Syntax | Result |
+|---|---|--------|--------|--------|--------|
+|   |   | *and*  |        | *nand* |        |
+| F | F | A && B | F      | A !! B | T      |
+| F | T | A && B | F      | A !! B | T      |
+| T | F | A && B | F      | A !! B | T      |
+| T | T | A && B | T      | A !! B | F      |
+|   |   | *or*   |        | *nor*  |        |
+| F | F | A || B | F      | A <> B | T      |
+| F | T | A || B | T      | A <> B | F      |
+| T | F | A || B | T      | A <> B | F      |
+| T | T | A || B | T      | A <> B | F      |
+|   |   | *xor*    |      | *nxor* |        |
+| F | F | A >< B | F      | A ~~ B | T      |
+| F | T | A >< B | T      | A ~~ B | F      |
+| T | F | A >< B | T      | A ~~ B | F      |
+| T | T | A >< B | F      | A ~~ B | T      |
+|   |   |*(none)*|        | *not*  |        |
+| F |   | A      | F      | !A     | T      |
+| T |   | A      | T      | !A     | F      |
 
 ### Examples
 
@@ -106,8 +133,8 @@ AddFour: {a: 4, Adder}
 
 ```js
 ValidateName: {
-  name @String.isInstanceOf ?: 'Name must be a string' @TypeError ^
-  name @length < 5          ?  'Name must be at least 5 characters long' @ValueError ^
+  name @String.isInstanceOf ?! 'Name must be a string' @TypeError ^
+  name @length < 5          ?? 'Name must be at least 5 characters long' @ValueError ^
 }
 
 = @TypeError {
