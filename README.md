@@ -139,10 +139,10 @@ x: {} {a::, b: b, c: 3}
 # Superhero Jacob
 ```
 
-##### 8: The second scope block can modify properties created in the first, as they are executed in order. For example:
+##### 8: A middle scope will not be changed upon modification. For example:
 
 ```bash
-person: {
+Person: {
   firstName: 'Lady',
   lastName: 'MacBeth'
   
@@ -151,10 +151,12 @@ person: {
   }
 }
 
-person {firstName: 'Violet'}
+violet: {} Person {firstName: 'Violet'}
 
 person.print
+violet.print
 
+# Lady MacBeth
 # Violet MacBeth
 ```
 
