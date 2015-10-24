@@ -41,7 +41,7 @@ All words represent symbol names.
 
 `&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT).
 
-### Scope Rules
+## Scope Rules
 
 ##### 1. The entire file starts out as a blank scope. Any properties defined are created in that scope. For example:
 
@@ -99,12 +99,17 @@ y: {b: 2}
 z: {c: 3}
 
 q: x y  # Read: create q based on x and y
-q z     # Read: execute z in the context of q
+q z     # Read: execute z in the context of q, modifying q
+@ z     # Read: execute z in the current context, modifying it
 
-[q.a, q.b, q.c].each @System.print
+[q.a, q.b, q.c, a, b, c].each @System.print
 
 # 1
 # 2
+# 3
+# undefined
+# undefined
+# 3
 
 ##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it cannot create properties in the parent. For example: 
 
@@ -145,9 +150,9 @@ person: {
   }
 }
 
-violet: person {firstName: 'Violet'}
+person {firstName: 'Violet'}
 
-violet.print
+person.print
 
 # Violet MacBeth
 ```
