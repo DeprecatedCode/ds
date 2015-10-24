@@ -74,26 +74,26 @@ All words represent symbol names.
 
 ### Boolean Logic Truth Table
 
-| A | B | Syntax   | Result | Syntax | Result  |
-|---|---|----------|--------|--------|---------|
-|   |   | *and*    |        | *nand* |         |
-| F | F | A && B   | F      | A !! B | T       |
-| F | T | A && B   | F      | A !! B | T       |
-| T | F | A && B   | F      | A !! B | T       |
-| T | T | A && B   | T      | A !! B | F       |
-|   |   | *or*     |        | *nor*  |         |
-| F | F | A \|\| B | F      | A &lt;&gt; B | T |
-| F | T | A \|\| B | T      | A &lt;&gt; B | F |
-| T | F | A \|\| B | T      | A &lt;&gt; B | F |
-| T | T | A \|\| B | T      | A &lt;&gt; B | F |
-|   |   | *xor*    |        | *nxor* |         |
-| F | F | A >< B   | F      | A ~~ B | T       |
-| F | T | A >< B   | T      | A ~~ B | F       |
-| T | F | A >< B   | T      | A ~~ B | F       |
-| T | T | A >< B   | F      | A ~~ B | T       |
-|   |   | *(none)* |        | *not*  |         |
-| F |   | A        | F      | !A     | T       |
-| T |   | A        | T      | !A     | F       |
+| A | B | Syntax   | Result | Syntax   | Result |
+|---|---|----------|--------|----------|--------|
+|   |   | *and*    |        | *nand*   |        |
+| F | F | `A && B` | F      | `A !! B` | T      |
+| F | T | `A && B` | F      | `A !! B` | T      |
+| T | F | `A && B` | F      | `A !! B` | T      |
+| T | T | `A && B` | T      | `A !! B` | F      |
+|   |   | *or*     |        | *nor*    |        |
+| F | F | `A || B` | F      | `A <> B` | T      |
+| F | T | `A || B` | T      | `A <> B` | F      |
+| T | F | `A || B` | T      | `A <> B` | F      |
+| T | T | `A || B` | T      | `A <> B` | F      |
+|   |   | *xor*    |        | *nxor*   |        |
+| F | F | `A >< B` | F      | `A ~~ B` | T      |
+| F | T | `A >< B` | T      | `A ~~ B` | F      |
+| T | F | `A >< B` | T      | `A ~~ B` | F      |
+| T | T | `A >< B` | F      | `A ~~ B` | T      |
+|   |   | *(none)* |        | *not*    |        |
+| F |   | `A`      | F      | `!A`     | T      |
+| T |   | `A`      | T      | `!A`     | F      |
 
 ### Examples
 
