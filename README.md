@@ -97,11 +97,29 @@ ValidateName: {
 ```js
 Person: {
   name: @it
+  
+  description get: {`Person: ${@name}`}
 }
 
 Person Employee: {
+  @name @super
+  
+  raiseSalary {
+    @salary: @salary + @it
+  }
+  
+  description get: {`Employee: ${@name} making ${@salary} per year`}
 }
 
-Employee bob: 'Bob'
+Person sarah: 'Sarah'
+
+Employee bob: {salary: 40000, name: 'Bob'}
 bob.salary: 50000
+10000 bob.raiseSalary
+
+sarah.description @system.print
+bob.description @system.print
+
+# Person: Sarah
+# Employee: Bob making 50000 per year
 ```
