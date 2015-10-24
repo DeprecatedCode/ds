@@ -139,7 +139,7 @@ x: {} {a::, b: b, c: 3}
 # Superhero Jacob
 ```
 
-##### 8: The logic blocks themselves will not be changed upon invocation. For example:
+##### 8. The logic blocks themselves will not be changed upon invocation. For example:
 
 ```bash
 Person: {
@@ -158,6 +158,19 @@ violet.print
 
 # Lady MacBeth
 # Violet MacBeth
+```
+
+##### 9. Any logic blocks returned inside another logic block are now bound to the scope in which they were accessed. For example:
+
+x: {a: 1, {a + 1}}
+y: {a: 5} x
+z: {q: {a + 2}, q}
+
+y @System.print
+{a: 2} z @System.print
+
+# 2
+# 4
 ```
 
 ### Boolean Logic Truth Table
@@ -231,7 +244,7 @@ Hello: {
 # Hello
 # World
 
-what: 'Planet', Hello
+what: 'Planet', @ Hello
 
 # Hello
 # Planet
