@@ -50,6 +50,8 @@ All words represent symbol names.
 
 `#` represents comment.
 
+`.` represents property.
+
 `+, -, *, /` represents arithmetic.
 
 `,` represents separation.
