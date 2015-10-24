@@ -111,9 +111,9 @@ Person Employee: {
   description get: {`Employee: ${@name} making ${@salary} per year`}
 }
 
-Person sarah: 'Sarah'
+sarah: 'Sarah' Person
 
-Employee bob: {salary: 40000, name: 'Bob'}
+bob: {salary: 40000, name: 'Bob'} Employee
 bob.salary: 50000
 10000 bob.raiseSalary
 
