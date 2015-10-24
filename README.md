@@ -93,3 +93,15 @@ ValidateName: {
 
 # There was an error with the name: Name must be at least 5 characters long
 ```
+
+```js
+Person: {
+  name: @it
+}
+
+Employee Person: {
+}
+
+bob Employee: 'Bob'
+bob.salary: 50000
+```
