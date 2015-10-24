@@ -13,6 +13,35 @@ Default Script
 
 `' ... '` represents string.
 
+### Deferred Execution
+
+A deferred block is executed by placing another deferred block next to it. These share scope as if they were the same object. For example:
+
+```js
+{name: 'Jacob'} {name @system.print}
+
+# Jacob
+```
+
+The second deferred block can modify properties of the first, as they are always combined. For example:
+
+```js
+person: {
+  firstName: 'Lady',
+  lastName: 'MacBeth'
+  
+  print get: {
+    `${firstName} ${lastName}` @system.print
+  }
+}
+
+person {firstName: 'Violet'}
+
+person.print
+
+# Violet MacBeth
+```
+
 ### Symbols
 
 All words represent symbol names.
