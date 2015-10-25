@@ -1,0 +1,2 @@
+'Hello' @Console.log
+3.4 + 4 @Console.log
