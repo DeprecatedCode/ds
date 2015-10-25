@@ -1,6 +1,10 @@
 # ds
 Default Script
 
+## Quickstart
+
+Clone this repo, then run `node . index.ds` from this folder. Paths are resolved relatively and absolutely as desired. It is also possible to use `node ds .` from a project where you have installed ds as a node module.
+
 ## Syntax
 
 ### Blocks
@@ -27,7 +31,7 @@ All words represent symbol names.
 
 `::` represents convenience (key: key) assignment.
 
-`+, -, *, /` represents arithmetic.
+`+, -, *, /, %` represents arithmetic.
 
 `,` represents separation.
 
@@ -48,7 +52,7 @@ All words represent symbol names.
 ```bash
 a: 1
 
-a @System.print
+a @Console.log
 
 # 1
 ```
@@ -60,8 +64,8 @@ x: {a: 1}  # Read: x is something that sets a to 1 on any scope
 
 @ x
 
-a @System.print
-x.a @System.print
+a @Console.log
+x.a @Console.log
 
 # 1
 # undefined
@@ -74,7 +78,7 @@ x: {a: 1}  # Read: x is something that sets a to 1 on any scope
 
 y: {} x    # Read: create a new scope since we are not invoking based on the parent
 
-[a, x.a, y.a].each @System.print
+[a, x.a, y.a].each @Console.log
 
 # undefined
 # undefined
@@ -84,9 +88,9 @@ y: {} x    # Read: create a new scope since we are not invoking based on the par
 ##### 4. Logic blocks are not invoked until used. For example:
 
 ```bash
-x: {a: 1, 2 @System.print}
+x: {a: 1, 2 @Console.log}
 
-({} x).a @System.print
+({} x).a @Console.log
 
 # 2
 # 1
@@ -103,7 +107,7 @@ q: x y  # Read: create scope q based on x and y
 q z     # Read: execute z in the context of q, modifying q
 @ z     # Read: execute z in the current context, modifying it
 
-[q.a, q.b, q.c, a, b, c].each @System.print
+[q.a, q.b, q.c, a, b, c].each @Console.log
 
 # 1
 # 2
@@ -119,8 +123,8 @@ q z     # Read: execute z in the context of q, modifying q
 a: 1
 x: {} {a::, b: b, c: 3}
 
-[x.a, x.b, x.c] @System.print
-[a, b, c] @System.print
+[x.a, x.b, x.c] @Console.log
+[a, b, c] @Console.log
 
 # 1
 # undefined
@@ -133,7 +137,7 @@ x: {} {a::, b: b, c: 3}
 ##### 7. The new scope will be returned by the operation of two logic blocks and can be continually chained. For example:
 
 ```bash
-{name: 'Jacob'} {name @System.print} {name: `Superhero ${name}`} {name @System.print}
+{name: 'Jacob'} {name @Console.log} {name: `Superhero ${name}`} {name @Console.log}
 
 # Jacob
 # Superhero Jacob
@@ -147,7 +151,7 @@ Person: {
   lastName: 'MacBeth'
   
   print get: {
-    `${firstName} ${lastName}` @System.print
+    `${firstName} ${lastName}` @Console.log
   }
 }
 
@@ -167,8 +171,8 @@ x: {a: 1, {a + 1}}
 y: {a: 5} x
 z: {q: {a + 2}, q}
 
-y @System.print
-{a: 2} z @System.print
+y @Console.log
+{a: 2} z @Console.log
 
 # 2
 # 4
@@ -228,7 +232,7 @@ y @System.print
 ### Examples
 
 ```bash
-'Hello World' @System.print
+'Hello World' @Console.log
 
 # Hello World
 ```
@@ -236,7 +240,7 @@ y @System.print
 ```bash
 Hello: {
   ['Hello', what].each {
-    @it @System.print
+    @it @Console.log
   }
 }
 
@@ -256,7 +260,7 @@ Adder: {a + b}
 
 AddFour: {a: 4, Adder}
 
-{b: 6} AddFour @System.print
+{b: 6} AddFour @Console.log
 
 # 10
 ```
@@ -268,16 +272,16 @@ ValidateName: {
 }
 
 = @TypeError {
-  @it.message @System.print
+  @it.message @Console.log
 }
 
 = @ValueError {
-  `There was an error with the name: ${@it.message}` @System.print
+  `There was an error with the name: ${@it.message}` @Console.log
 }
 
 {name: 'Bob'} ValidateName
 
-'Success, the name is ok' @System.print
+'Success, the name is ok' @Console.log
 
 # There was an error with the name: Name must be at least 5 characters long
 ```
@@ -307,8 +311,8 @@ bob: {salary: 40000, name: 'Bob'} Employee
 bob.salary: 50000
 15000 bob.raiseSalary
 
-sarah.description @System.print
-bob.description @System.print
+sarah.description @Console.log
+bob.description @Console.log
 
 # Person: Sarah
 # Employee: Bob making 65000 per year
