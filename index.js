@@ -4,6 +4,15 @@
  * @license MIT
  */
 
+const NAME     = 0;
+const OPERATOR = 1;
+const LOGIC    = 2;
+const GROUP    = 3;
+const ARRAY    = 4;
+const STRING   = 5;
+const TEMPLATE = 6;
+const BREAK    = 7;
+
  /**
   * This file can be used in the following modes:
   *
@@ -16,8 +25,9 @@
   *   ds.Console.log(ds.Parse('1 + 3')(ds.Scope()));
   */
 var ds = {
-  Array     : Array,
-  Apply     : function (logic) {
+  Array: Array,
+
+  Apply: function (logic) {
     return function (scope) {
       var value;
 
@@ -28,9 +38,11 @@ var ds = {
       return value === ds.Flag ? scope : value;
     };
   },
+
   ApplyValue: function (scope, value) {
     if (scope.$state$.operator.length) {
       scope.$state$.value = ds.Operate(
+        scope,
         scope.$state$.value,
         scope.$state$.operator,
         value
@@ -46,36 +58,53 @@ var ds = {
       scope.$state$.value = ds.Combine(scope.$state$.value, value);
     }
   },
-  Booean    : Boolean,
-  Console   : console,
-  Combine   : function (first, second) {
+
+  Booean: Boolean,
+
+  Console: console,
+
+  Combine: function (first, second) {
     if (typeof second === 'function') {
       return second(first);
     }
   },
-  Date      : Date,
-  ErrorMessage : function (type, step) {
+
+  Date: Date,
+
+  ErrorMessage: function (err, step) {
     var desc;
 
     if ('value' in step) {
       desc = step.value;
     }
 
-    else if (step.type === 'l') {
-      desc = '{...}';
+    else {
+      desc = [
+        'name',
+        'operator',
+        'logic',
+        'group',
+        'array',
+        'string',
+        'template'
+      ][step.type];
     }
 
-    else if (step.type === 'g') {
-      desc = '(...)';
-    }
+    err.stack = [];
 
-    return type + ' ' + desc + ' at ' + step.position();
+    err.name = '@' + err.name;
+
+    err.message = err.message + ' ' + desc + ' at ' + step.position() + '\n' +
+      step.position.getSource(true);
+
+    return err;
   },
-  Execute   : function (step, scope) {
+
+  Execute: function (step, scope) {
     var resolve = scope.$state$.resolve;
     var lastResolve = resolve.length && resolve[resolve.length - 1];
-    if ((step.type === 'v' && (!lastResolve || lastResolve.type === 'o')) ||
-        (step.type === 'o' && step.value === '.')) {
+    if ((step.type === NAME && (!lastResolve || lastResolve.type === OPERATOR)) ||
+        (step.type === OPERATOR && step.value === '.')) {
       resolve.push(step);
       return;
     }
@@ -85,38 +114,58 @@ var ds = {
       ds.ApplyValue(scope, ds.Resolve(scope, resolve));
       resolve.length = 0;
 
-      if (step.type === 'v') {
+      if (step.type === NAME) {
         resolve.push(step);
         return;
       }
     }
 
-    if (step.type === 'x') {
+    if (step.type === BREAK) {
+      if ('$accumulate$' in scope) {
+        scope.$accumulate$.push(scope.$state$.value);
+      }
       scope.$state$.value = ds.Undefined;
     }
 
-    else if (step.type === 'o') {
+    else if (step.type === OPERATOR) {
       scope.$state$.operator.push(step);
     }
 
-    else if (step.type === 's') {
+    else if (step.type === STRING) {
       return ds.ApplyValue(scope, step.items.map(function (i) {
         return i.value;
       }).join(''));
     }
 
-    else if (step.type === 'g') {
+    else if (step.type === GROUP) {
       return ds.Apply(step)(scope);
     }
 
+    else if (step.type === ARRAY) {
+      var arrayScope = ds.Scope();
+      arrayScope.$accumulate$ = [];
+      ds.Apply(step)(arrayScope);
+      return arrayScope.$accumulate$;
+    }
+
+    else if (step.type === LOGIC) {
+      return function (scope) {
+        return ds.Apply(step)(scope);
+      };
+    }
+
     else {
-      throw new SyntaxError(ds.ErrorMessage('Invalid', step));
+      throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
     }
   },
-  Extension : '.ds',
-  File      : require('fs'),
-  Group     : {},
-  Import    : function (path) {
+
+  Extension: '.ds',
+
+  File: require('fs'),
+
+  Group: {},
+
+  Import: function (path) {
     var stats;
 
     try {
@@ -133,21 +182,28 @@ var ds = {
     }
 
     return ds.Parse(
-      ds.File.readFileSync(path, ds.UTF8)
+      ds.File.readFileSync(path, ds.UTF8),
+      path
     )(ds.Scope());
   },
-  Index     : 'index',
-  JSON      : JSON,
-  Logic     : function (type, range) {
+
+  Index: 'index',
+
+  JSON: JSON,
+
+  Logic: function (type, range) {
     return {
       type: type,
       range: range,
       items: []
     };
   },
-  Null      : null,
-  Number    : Number,
-  Operate   : function (left, operator, right) {
+
+  Null: null,
+
+  Number: Number,
+
+  Operate: function (scope, left, operator, right) {
     var combinedOperator = {
       position: operator[0].position,
       value: operator.map(function (o) {
@@ -155,7 +211,11 @@ var ds = {
       }).join('')
     };
 
-    if (combinedOperator.value === '+') {
+    if (combinedOperator.value === ':') {
+      scope[left] = right;
+    }
+
+    else if (combinedOperator.value === '+') {
       return left + right;
     }
 
@@ -180,21 +240,40 @@ var ds = {
     }
 
     else {
-      throw new SyntaxError(ds.ErrorMessage(
-        'Operator not implemented:', combinedOperator));
+      throw ds.ErrorMessage(new SyntaxError('Operator not implemented:'),
+                            combinedOperator);
     }
   },
-  Parse     : function (source) {
+
+  Parse: function (source, name) {
     var breaks = [-1];
     var position = function (i) {
-      return function () {
+      var positionFn = function () {
         var line = -1;
         while (i > breaks[line + 1]) {
           line++;
         }
         var column = i - breaks[line];
         return 'line ' + ++line + ' column ' + column;
-      }
+      };
+
+      positionFn.getSource = function (includeCaret) {
+        var line = -1;
+        while (i > breaks[line + 1]) {
+          line++;
+        }
+        var column = i - breaks[line];
+        var start = breaks[line] + 1;
+        var sourceLine = source.substr(start, breaks[line + 1] - start);
+
+        if (includeCaret) {
+          sourceLine = '\n' + name + ':' + (line + 1) + '\n' + sourceLine + '\n' +
+                       new Array(column).join(' ') + '^';
+        }
+        return sourceLine;
+      };
+
+      return positionFn;
     };
 
     var logic = ds.Logic('Logic', [0, source.length - 1]);
@@ -204,7 +283,7 @@ var ds = {
     var previous;
     var isString;
     var queue = {
-      type: 'v',
+      type: NAME,
       range: [0],
       position: position(0),
       value: ''
@@ -216,7 +295,7 @@ var ds = {
         head.items.push(queue);
       }
       queue = {
-        type: 'v',
+        type: NAME,
         range: [i + 1],
         position: position(i + 1),
         value: ''
@@ -254,7 +333,7 @@ var ds = {
       else if (ds.Syntax.close.indexOf(source[i]) !== -1) {
         if (head.type && ds.Syntax.blocks[head.type] && source[i] === ds.Syntax.blocks[head.type].close) {
           queueToHead(i);
-          head.items.push({type: 'x'});
+          head.items.push({type: BREAK});
           head.range.push(i);
           head = stack.pop();
         }
@@ -264,18 +343,16 @@ var ds = {
         }
 
         if (!head) {
-          throw new SyntaxError(ds.ErrorMessage(
-            'Unexpected', {
-              value: '"' + source[i] + '"',
-              position: position(i)
-            }
-          ));
+          throw ds.ErrorMessage(new SyntaxError('Unexpected'), {
+            value: '"' + source[i] + '"',
+            position: position(i)
+          });
         }
       }
 
       else if (ds.Syntax.separators.indexOf(source[i]) !== -1) {
         queueToHead(i);
-        head.items.push({type: 'x'});
+        head.items.push({type: BREAK});
       }
 
       else if (ds.Syntax.whitespace.indexOf(source[i]) !== -1) {
@@ -284,7 +361,7 @@ var ds = {
 
       else if (/[^$@a-zA-Z0-9]/.test(source[i])) {
         queueToHead(i);
-        head.items.push({type: 'o', value: source[i], position: position(i)});
+        head.items.push({type: OPERATOR, value: source[i], position: position(i)});
       }
 
       else {
@@ -294,13 +371,16 @@ var ds = {
 
     return ds.Apply(logic);
   },
-  Path      : require('path'),
-  Process   : process,
-  Resolve   : function (scope, resolve) {
+
+  Path: require('path'),
+
+  Process: process,
+
+  Resolve: function (scope, resolve) {
     var value = scope;
     var allowNext = true;
     resolve.forEach(function (step) {
-      if (step.type === 'v') {
+      if (step.type === NAME) {
         if (!allowNext) {
           throw new TypeError();
         }
@@ -322,11 +402,18 @@ var ds = {
         }
 
         else {
+          if (value === null) {
+            throw ds.ErrorMessage(new TypeError('Cannot read property of @Null:'), step);
+          }
+
+          else if (typeof value === 'undefined') {
+            throw ds.ErrorMessage(new TypeError('Cannot read property of @Undefined:'), step);
+          }
           value = value[step.value];
         }
       }
 
-      else if (step.type === 'o') {
+      else if (step.type === OPERATOR) {
         allowNext = true;
       }
 
@@ -337,7 +424,8 @@ var ds = {
 
     return value;
   },
-  Scope     : function () {
+
+  Scope: function () {
     var scope = {};
     Object.defineProperty(scope, '$state$', {
       value: {
@@ -350,30 +438,37 @@ var ds = {
     });
     return scope;
   },
-  String    : String,
-  Syntax    : {
+
+  String: String,
+
+  Syntax: {
     separators  : ['\n', ','],
     whitespace  : ['\t', ' '],
     close       : [']', ')', '}'],
     open        : {
-      '[' : 'a',
-      '(' : 'g',
-      '{' : 'l',
-      "'" : 's',
-      '`' : 't'
+      '[' : ARRAY,
+      '(' : GROUP,
+      '{' : LOGIC,
+      "'" : STRING,
+      '`' : TEMPLATE
     },
-    blocks : {
-      a : {close: ']', type: 'a'},
-      g : {close: ')', type: 'g'},
-      l : {close: '}', type: 'l'},
-      s : {close: "'", type: 's',  string: true},
-      t : {close: '`', type: 't',   string: true}
-    }
+    blocks: (function (blocks) {
+      blocks[ARRAY]    = {close: /*[*/ ']', type: ARRAY};
+      blocks[GROUP]    = {close: /*(*/ ')', type: GROUP};
+      blocks[LOGIC]    = {close: /*{*/ '}', type: LOGIC};
+      blocks[STRING]   = {close: /*'*/ "'", type: STRING,    string: true};
+      blocks[TEMPLATE] = {close: /*`*/ '`', type: TEMPLATE,  string: true};
+      return blocks;
+    })({})
   },
-  System    : require('os'),
-  Template  : {},
-  Undefined : (function () {})(),
-  UTF8      : 'utf8'
+
+  System: require('os'),
+
+  Template: {},
+
+  Undefined: (function () {})(),
+
+  UTF8: 'utf8'
 };
 
 if (require.main === module) {
@@ -385,8 +480,8 @@ if (require.main === module) {
 }
 
 else {
-  module.exports = function (source) {
-    return ds.Parse(source)(ds.Scope());
+  module.exports = function (source, name) {
+    return ds.Parse(source, name)(ds.Scope());
   };
 
   Object.keys(ds).forEach(function (key) {
