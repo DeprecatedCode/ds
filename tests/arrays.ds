@@ -1,13 +1,23 @@
 cart: ['apple', 'banana', 'carrot', 'apple']
 
-'There are' cart.length ' items in the cart.' @Console.log
+'There are ' cart.length ' items in the cart.'                      @Console.log
 
 isFruit: {@it ['apple', 'banana', 'orange'].contains}
 
-fruitOnly: cart.filter isFruit
-nonFruit: cart.exclude isFruit
+a: {red: 4}
+({} a).red
 
-`The cart has ${fruitOnly.length} fruits and
-              ${nonFruit.length} other items in it.` @Console.log
+exclude: {
+  array: @it,
+  {filter: @it,
+    {@it filter !} array.filter
+  }
+}
 
-`The second item in the cart is a delicious yellow ${2 cart}.`;
+fruitOnly: isFruit cart.filter
+nonFruit: isFruit (cart exclude)
+
+'The cart has ' fruitOnly.length ' fruits and
+              ' nonFruit.length ' other items in it.'               @Console.log
+
+'The second item in the cart is a delicious yellow ' 2 cart '.'     @Console.log

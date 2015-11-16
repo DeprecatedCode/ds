@@ -29,17 +29,14 @@ var ds = {
 
   Apply: function (logic) {
     return function (scope) {
-      var value;
-
       logic.items.forEach(function (step) {
-        value = ds.Execute(step, scope);
+        ds.Execute(step, scope);
       });
-
-      return value === ds.Flag ? scope : value;
+      return scope;
     };
   },
 
-  ApplyValue: function (scope, value) {
+  ApplyValue: function (scope, value, step) {
     if (scope.$state$.operator.length) {
       scope.$state$.value = ds.Operate(
         scope,
@@ -55,7 +52,7 @@ var ds = {
     }
 
     else {
-      scope.$state$.value = ds.Combine(scope.$state$.value, value);
+      scope.$state$.value = ds.Combine(scope.$state$.value, value, scope, step);
     }
   },
 
@@ -63,10 +60,28 @@ var ds = {
 
   Console: console,
 
-  Combine: function (first, second) {
+  Combine: function (first, second, scope, step) {
+    // console.log('x', first, second, scope);
     if (typeof second === 'function') {
+      if (typeof first === 'function') {
+        var newScope = ds.Scope(scope);
+        first(newScope);
+        return second(newScope);
+      }
+
       return second(first);
     }
+
+    if (typeof first === 'string') {
+      return first + String(second);
+    }
+
+    if (typeof first === 'number') {
+      return second[first];
+    }
+
+    throw ds.ErrorMessage(new SyntaxError('Invalid combination of ' +
+                          ds.Type(first) + ' and ' + ds.Type(second)), step);
   },
 
   Date: Date,
@@ -86,7 +101,8 @@ var ds = {
         'group',
         'array',
         'string',
-        'template'
+        'template',
+        'at break'
       ][step.type];
     }
 
@@ -102,60 +118,58 @@ var ds = {
 
   Execute: function (step, scope) {
     var resolve = scope.$state$.resolve;
-    var lastResolve = resolve.length && resolve[resolve.length - 1];
-    if ((step.type === NAME && (!lastResolve || lastResolve.type === OPERATOR)) ||
-        (step.type === OPERATOR && step.value === '.')) {
-      resolve.push(step);
-      return;
-    }
 
-    // resolve all variables before continuing
-    if (resolve.length) {
-      ds.ApplyValue(scope, ds.Resolve(scope, resolve));
-      resolve.length = 0;
+    var dotExpected = resolve.length > 0 && !(
+      resolve[resolve.length - 1].type === OPERATOR &&
+      resolve[resolve.length - 1].value === '.'
+    );
 
-      if (step.type === NAME) {
-        resolve.push(step);
-        return;
+    // if we are an assignment key
+    if (step.type === OPERATOR && step.value === ':') {
+      if (!dotExpected || scope.$state$.key) {
+        throw ds.ErrorMessage(new SyntaxError('Unexpected assigment operator'), step);
       }
-    }
-
-    if (step.type === BREAK) {
-      if ('$accumulate$' in scope) {
-        scope.$accumulate$.push(scope.$state$.value);
-      }
+      scope.$state$.key = resolve.map(
+        function (x) {return x.value;}
+      ).join('');
+      scope.$state$.resolve = [];
       scope.$state$.value = ds.Undefined;
     }
 
-    else if (step.type === OPERATOR) {
+    else if (step.type === OPERATOR && step.value !== '.') {
+      if (!dotExpected) {
+        throw ds.ErrorMessage(new SyntaxError('Unexpected operator'), step);
+      }
+      ds.Resolve(scope);
       scope.$state$.operator.push(step);
     }
 
-    else if (step.type === STRING) {
-      return ds.ApplyValue(scope, step.items.map(function (i) {
-        return i.value;
-      }).join(''));
-    }
+    else if (step.type === BREAK) {
+      if (resolve.length && !dotExpected) {
+        throw ds.ErrorMessage(new SyntaxError('Unexpected syntax'), step);
+      }
 
-    else if (step.type === GROUP) {
-      return ds.Apply(step)(scope);
-    }
+      if (scope.$state$.key) {
+        scope[scope.$state$.key] = ds.Resolve(scope);
+        scope.$state$.key = ds.Undefined;
+        scope.$state$.value = ds.Undefined;
+      }
 
-    else if (step.type === ARRAY) {
-      var arrayScope = ds.Scope();
-      arrayScope.$accumulate$ = [];
-      ds.Apply(step)(arrayScope);
-      return arrayScope.$accumulate$;
-    }
+      else if ('accumulate' in scope.$state$) {
+        scope.$state$.accumulate.push(ds.Resolve(scope));
+        scope.$state$.value = ds.Undefined;
+      }
 
-    else if (step.type === LOGIC) {
-      return function (scope) {
-        return ds.Apply(step)(scope);
-      };
+      else {
+        scope.$state$.value = ds.Resolve(scope);
+      }
     }
 
     else {
-      throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
+      if (dotExpected && !(step.type === OPERATOR && step.value === '.')) {
+        ds.Resolve(scope);
+      }
+      scope.$state$.resolve.push(step);
     }
   },
 
@@ -211,8 +225,8 @@ var ds = {
       }).join('')
     };
 
-    if (combinedOperator.value === ':') {
-      scope[left] = right;
+    if (combinedOperator.value === '!') {
+      return !left;
     }
 
     else if (combinedOperator.value === '+') {
@@ -264,7 +278,8 @@ var ds = {
         }
         var column = i - breaks[line];
         var start = breaks[line] + 1;
-        var sourceLine = source.substr(start, breaks[line + 1] - start);
+        var sourceLine = source.substr(start,
+                                       (breaks[line + 1] || start + 1) - start);
 
         if (includeCaret) {
           sourceLine = '\n' + name + ':' + (line + 1) + '\n' + sourceLine + '\n' +
@@ -331,9 +346,10 @@ var ds = {
       }
 
       else if (ds.Syntax.close.indexOf(source[i]) !== -1) {
-        if (head.type && ds.Syntax.blocks[head.type] && source[i] === ds.Syntax.blocks[head.type].close) {
+        if (head.type && ds.Syntax.blocks[head.type] &&
+            source[i] === ds.Syntax.blocks[head.type].close) {
           queueToHead(i);
-          head.items.push({type: BREAK});
+          head.items.push({type: BREAK, position: position(i)});
           head.range.push(i);
           head = stack.pop();
         }
@@ -352,7 +368,7 @@ var ds = {
 
       else if (ds.Syntax.separators.indexOf(source[i]) !== -1) {
         queueToHead(i);
-        head.items.push({type: BREAK});
+        head.items.push({type: BREAK, position: position(i)});
       }
 
       else if (ds.Syntax.whitespace.indexOf(source[i]) !== -1) {
@@ -376,17 +392,51 @@ var ds = {
 
   Process: process,
 
-  Resolve: function (scope, resolve) {
+  Resolve: function (scope) {
     var value = scope;
-    var allowNext = true;
+    var allowRead = true;
+    var resolve = scope.$state$.resolve;
     resolve.forEach(function (step) {
-      if (step.type === NAME) {
-        if (!allowNext) {
-          throw new TypeError();
+      if (step.type === OPERATOR && step.value === '.') {
+        if (allowRead) {
+          throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
         }
+        allowRead = true;
+        return;
+      }
 
-        allowNext = false;
+      if (!allowRead) {
+        throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
+      }
 
+      allowRead = false;
+
+      if (step.type === STRING) {
+        value = step.items.map(function (i) {
+          return i.value;
+        }).join('');
+      }
+
+      else if (step.type === GROUP) {
+        var groupScope = ds.Scope(scope);
+        ds.Apply(step)(groupScope);
+        value = groupScope.$state$.value;
+      }
+
+      else if (step.type === ARRAY) {
+        var arrayScope = ds.Scope(scope);
+        arrayScope.$state$.accumulate = [];
+        ds.Apply(step)(arrayScope);
+        value = arrayScope.$state$.accumulate;
+      }
+
+      else if (step.type === LOGIC) {
+        value = function (scope) {
+          return ds.Apply(step)(scope);
+        };
+      }
+
+      else if (step.type === NAME) {
         if (/^\d+$/.test(step.value)) {
           if (typeof value === 'number') {
             value = parseFloat(value + '.' + step.value);
@@ -409,27 +459,29 @@ var ds = {
           else if (typeof value === 'undefined') {
             throw ds.ErrorMessage(new TypeError('Cannot read property of @Undefined:'), step);
           }
+
+          var lastValue = value;
           value = value[step.value];
+          if (typeof value === 'function') {
+            value = value.bind(lastValue);
+          }
         }
       }
 
-      else if (step.type === OPERATOR) {
-        allowNext = true;
-      }
-
       else {
-        throw new TypeError();
+        throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
       }
     });
 
+    scope.$state$.resolve = [];
+    scope.$state$.value = value;
     return value;
   },
 
-  Scope: function () {
-    var scope = {};
+  Scope: function (parentScope) {
+    var scope = Object.create(parentScope || Object.prototype);
     Object.defineProperty(scope, '$state$', {
       value: {
-        stage: 'key',
         value: ds.Undefined,
         operator: [],
         resolve: []
@@ -462,9 +514,20 @@ var ds = {
     })({})
   },
 
+  SyntaxError: SyntaxError,
+
   System: require('os'),
 
   Template: {},
+
+  Type: function (thing) {
+    if (Array.isArray(thing)) {
+      return 'array';
+    }
+    return typeof thing;
+  },
+
+  TypeError: TypeError,
 
   Undefined: (function () {})(),
 
