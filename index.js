@@ -27,13 +27,21 @@ const BREAK    = 7;
 var ds = {
   Array: Array,
 
-  Apply: function (logic) {
-    return function (scope) {
+  Apply: function (logic, originalScope) {
+    var fn = function ApplyScope(scope) {
+      if (!scope.$state$) {
+        throw new Error('Invalid scope');
+      }
       logic.items.forEach(function (step) {
-        ds.Execute(step, scope);
+        ds.Execute(step, scope, originalScope);
       });
+      if (scope.$state$.return) {
+        return scope.$state$.value;
+      }
       return scope;
     };
+    fn.$logic$ = true;
+    return fn;
   },
 
   ApplyValue: function (scope, value, step) {
@@ -42,12 +50,13 @@ var ds = {
         scope,
         scope.$state$.value,
         scope.$state$.operator,
-        value
+        value,
+        step
       );
       scope.$state$.operator.length = 0;
     }
 
-    else if (scope.$state$.value === ds.Undefined) {
+    if (scope.$state$.value === ds.Undefined) {
       scope.$state$.value = value;
     }
 
@@ -61,22 +70,41 @@ var ds = {
   Console: console,
 
   Combine: function (first, second, scope, step) {
-    // console.log('x', first, second, scope);
-    if (typeof second === 'function') {
-      if (typeof first === 'function') {
+    if (typeof first === 'function') {
+      if (first.$logic$) {
+        if (typeof second === 'function' && second.$logic$) {
+          var newScope = ds.Scope(scope);
+          newScope['@it'] = first;
+          return second(newScope);
+        }
+
+        else if (typeof second === 'function') {
+          return second(function (it) {
+            var newScope = ds.Scope(scope);
+            newScope['@it'] = it;
+            return first(newScope);
+          });
+        }
+      }
+    }
+
+    else if (typeof second === 'function') {
+      if (second.$logic$) {
         var newScope = ds.Scope(scope);
-        first(newScope);
+        newScope['@it'] = first;
         return second(newScope);
       }
 
-      return second(first);
+      else {
+        return second(first);
+      }
     }
 
-    if (typeof first === 'string') {
+    else if (typeof first === 'string') {
       return first + String(second);
     }
 
-    if (typeof first === 'number') {
+    else if (typeof first === 'number') {
       return second[first];
     }
 
@@ -116,7 +144,7 @@ var ds = {
     return err;
   },
 
-  Execute: function (step, scope) {
+  Execute: function (step, scope, originalScope) {
     var resolve = scope.$state$.resolve;
 
     var dotExpected = resolve.length > 0 && !(
@@ -137,10 +165,12 @@ var ds = {
     }
 
     else if (step.type === OPERATOR && step.value !== '.') {
-      if (!dotExpected) {
+      if (!dotExpected && resolve.length) {
         throw ds.ErrorMessage(new SyntaxError('Unexpected operator'), step);
       }
-      ds.Resolve(scope);
+      if (resolve.length) {
+        ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+      }
       scope.$state$.operator.push(step);
     }
 
@@ -149,31 +179,43 @@ var ds = {
         throw ds.ErrorMessage(new SyntaxError('Unexpected syntax'), step);
       }
 
+      if (!resolve.length) {
+        return;
+      }
+
+      ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+
       if (scope.$state$.key) {
-        scope[scope.$state$.key] = ds.Resolve(scope);
+        scope[scope.$state$.key] = scope.$state$.value;
         scope.$state$.key = ds.Undefined;
         scope.$state$.value = ds.Undefined;
+        scope.$state$.return = false;
       }
 
       else if ('accumulate' in scope.$state$) {
-        scope.$state$.accumulate.push(ds.Resolve(scope));
+        scope.$state$.accumulate.push(scope.$state$.value);
         scope.$state$.value = ds.Undefined;
+        scope.$state$.return = false;
       }
 
       else {
-        scope.$state$.value = ds.Resolve(scope);
+        scope.$state$.return = true;
       }
     }
 
     else {
       if (dotExpected && !(step.type === OPERATOR && step.value === '.')) {
-        ds.Resolve(scope);
+        if (resolve.length) {
+          ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+        }
       }
       scope.$state$.resolve.push(step);
     }
   },
 
   Extension: '.ds',
+
+  False: false,
 
   File: require('fs'),
 
@@ -217,7 +259,7 @@ var ds = {
 
   Number: Number,
 
-  Operate: function (scope, left, operator, right) {
+  Operate: function (scope, left, operator, right, step) {
     var combinedOperator = {
       position: operator[0].position,
       value: operator.map(function (o) {
@@ -225,8 +267,22 @@ var ds = {
       }).join('')
     };
 
+    if (combinedOperator.value[combinedOperator.value.length - 1] === '-') {
+      combinedOperator.value = combinedOperator.value.substr(0,
+                                 combinedOperator.value.length - 1);
+      right = -1 * right;
+    }
+
     if (combinedOperator.value === '!') {
       return !left;
+    }
+
+    else if (combinedOperator.value === '!=') {
+      return left !== right;
+    }
+
+    else if (combinedOperator.value === '=') {
+      return left === right;
     }
 
     else if (combinedOperator.value === '+') {
@@ -392,10 +448,15 @@ var ds = {
 
   Process: process,
 
-  Resolve: function (scope) {
+  Resolve: function (scope, originalScope) {
     var value = scope;
     var allowRead = true;
     var resolve = scope.$state$.resolve;
+
+    if (resolve.length === 0) {
+      return ds.Undefined;
+    }
+
     resolve.forEach(function (step) {
       if (step.type === OPERATOR && step.value === '.') {
         if (allowRead) {
@@ -419,21 +480,19 @@ var ds = {
 
       else if (step.type === GROUP) {
         var groupScope = ds.Scope(scope);
-        ds.Apply(step)(groupScope);
+        ds.Apply(step, originalScope)(groupScope);
         value = groupScope.$state$.value;
       }
 
       else if (step.type === ARRAY) {
         var arrayScope = ds.Scope(scope);
         arrayScope.$state$.accumulate = [];
-        ds.Apply(step)(arrayScope);
+        ds.Apply(step, originalScope)(arrayScope);
         value = arrayScope.$state$.accumulate;
       }
 
       else if (step.type === LOGIC) {
-        value = function (scope) {
-          return ds.Apply(step)(scope);
-        };
+        value = ds.Apply(step, scope, originalScope);
       }
 
       else if (step.type === NAME) {
@@ -448,7 +507,14 @@ var ds = {
         }
 
         else if (step.value[0] === '@') {
-          value = ds[step.value.substr(1)];
+          var name = step.value.substr(1);
+          value = scope['@' + name];
+          if (originalScope && typeof value === 'undefined') {
+            value = originalScope['@' + name];
+          }
+          if (typeof value === 'undefined') {
+            value = ds[name];
+          }
         }
 
         else {
@@ -462,7 +528,12 @@ var ds = {
 
           var lastValue = value;
           value = value[step.value];
-          if (typeof value === 'function') {
+
+          if (lastValue === scope && originalScope && typeof value === 'undefined') {
+            value = originalScope[step.value];
+          }
+
+          if (typeof value === 'function' && !value.$logic$) {
             value = value.bind(lastValue);
           }
         }
@@ -474,7 +545,6 @@ var ds = {
     });
 
     scope.$state$.resolve = [];
-    scope.$state$.value = value;
     return value;
   },
 
@@ -519,6 +589,8 @@ var ds = {
   System: require('os'),
 
   Template: {},
+
+  True: true,
 
   Type: function (thing) {
     if (Array.isArray(thing)) {
