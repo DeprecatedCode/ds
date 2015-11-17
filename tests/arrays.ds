@@ -1,13 +1,14 @@
 cart: ['apple', 'banana', 'carrot', 'apple', 'beet']
 
-'There are ' cart.length ' items in the cart.'                      @Console.log
+'There are ' cart.length ' items in the cart.' @Console.log
 
-isFruit: {@it ['apple', 'banana', 'orange'].indexOf -1 @Console.log}
+isFruit: {@it ['apple', 'banana', 'orange'].indexOf != -1}
 
 'Is an apple a fruit? ' ('apple' isFruit) @Console.log
 
-a: {red: 'Red fire trucks are everywhere.'}
-({} a).red @Console.log
+truckTalk: {&, 0 colors ' fire trucks are everywhere.'}
+
+{colors: ['Red', 'Blue']} truckTalk @Console.log
 
 exclude: {
   array: @it,
@@ -19,7 +20,10 @@ exclude: {
 fruitOnly: isFruit cart.filter
 nonFruit: isFruit (cart exclude)
 
-'The cart has ' fruitOnly.length ' fruits and
-              ' nonFruit.length ' other items in it.'               @Console.log
+'The cart has ' fruitOnly.length ' fruits and '
+                nonFruit.length  ' other items in it.' @Console.log
 
-'The second item in the cart is a delicious yellow ' (1 cart) '.'   @Console.log
+'The ' (1 ['first', 'second'])
+  ' item in the cart is a delicious yellow '
+  (1 cart) '.'
+  @Console.log

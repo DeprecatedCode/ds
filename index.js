@@ -50,7 +50,8 @@ var ds = {
     }
 
     else {
-      scope.$state$.value = ds.Combine(scope.$state$.value, value, scope, step);
+      var left = scope.$state$.value;
+      scope.$state$.value = ds.Combine(left, value, scope, step);
     }
   },
 
@@ -182,12 +183,14 @@ var ds = {
         return;
       }
 
+      var value = ds.Resolve(scope, originalScope);
+
       if (scope.$state$.operator.length > 0) {
-        ds.Operate(scope, ds.Resolve(scope, originalScope), step);
+        scope.$state$.value = ds.Operate(scope, value, step);
       }
 
       else {
-        ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+        ds.ApplyValue(scope, value, step);
       }
     };
 
@@ -205,8 +208,8 @@ var ds = {
     resolve = scope.$state$.resolve;
 
     if (step.type === BREAK) {
-      if (resolve.length && nameExpected) {
-        throw ds.ErrorMessage(new SyntaxError('Unexpected syntax'), step);
+      if (scope.$state$.operator.length > 0) {
+        scope.$state$.value = ds.Operate(scope, ds.Undefined, step);
       }
 
       if (scope.$state$.key) {
@@ -218,6 +221,11 @@ var ds = {
 
       else if ('accumulate' in scope.$state$) {
         scope.$state$.accumulate.push(scope.$state$.value);
+        scope.$state$.value = ds.Undefined;
+        scope.$state$.return = false;
+      }
+
+      else if (step.force) {
         scope.$state$.value = ds.Undefined;
         scope.$state$.return = false;
       }
@@ -295,62 +303,64 @@ var ds = {
       combinedOperator.value = combinedOperator.value.substr(0,
                                  combinedOperator.value.length - 1);
       if (typeof right !== 'number') {
-        debugger;
         throw ds.ErrorMessage(new TypeError('Cannot negate a non-numeric value'), step);
       }
-      right = -1 * right;
 
-      if (combinedOperator.value.length === 0) {
-        return [right];
-      }
+      right = -1 * right;
     }
 
-    scope.$state$.value = (function () {
-      if (combinedOperator.value === '!') {
-        return !(
-          typeof left === 'undefined' ||
-                 left === false ||
-                 left === null
-        );
-      }
+    if (combinedOperator.value === '!') {
+      return (
+        typeof left === 'undefined' ||
+               left === false ||
+               left === null
+      );
+    }
 
-      else if (combinedOperator.value === '!=') {
-        return left !== right;
+    else if (combinedOperator.value === '&') {
+      var fn = scope['@it'];
+      if (fn.$logic$) {
+        fn(scope);
       }
+      return;
+    }
 
-      else if (combinedOperator.value === '=') {
-        return left === right;
-      }
+    else if (combinedOperator.value === '!=') {
+      return left !== right;
+    }
 
-      else if (combinedOperator.value === '+') {
-        return left + right;
-      }
+    else if (combinedOperator.value === '=') {
+      return left === right;
+    }
 
-      else if (combinedOperator.value === '-') {
-        return left - right;
-      }
+    else if (combinedOperator.value === '+') {
+      return left + right;
+    }
 
-      else if (combinedOperator.value === '*') {
-        return left * right;
-      }
+    else if (combinedOperator.value === '-') {
+      return left - right;
+    }
 
-      else if (combinedOperator.value === '/') {
-        return left / right;
-      }
+    else if (combinedOperator.value === '*') {
+      return left * right;
+    }
 
-      else if (combinedOperator.value === '+') {
-        return left + right;
-      }
+    else if (combinedOperator.value === '/') {
+      return left / right;
+    }
 
-      else if (combinedOperator.value === '%') {
-        return left % right;
-      }
+    else if (combinedOperator.value === '+') {
+      return left + right;
+    }
 
-      else {
-        throw ds.ErrorMessage(new SyntaxError('Operator not implemented:'),
-                              combinedOperator);
-      }
-    })();
+    else if (combinedOperator.value === '%') {
+      return left % right;
+    }
+
+    else {
+      throw ds.ErrorMessage(new SyntaxError('Operator not implemented:'),
+                            combinedOperator);
+    }
   },
 
   Parse: function (source, name) {
