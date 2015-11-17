@@ -1,2 +1,12 @@
-'Hello' @Console.log
-3.4 + 4 @Console.log
+'Hello, World!' @Console.log
+
+3.4 + 4 - - 2.6 + (22/7 - 10 - 0.00126)
+  {'Pi is about ' @it '!'}
+  @Console.log
+
+{@it '...' @Console.log} [
+  'Three',
+  'Two',
+  'One',
+  'Liftoff!'
+].forEach

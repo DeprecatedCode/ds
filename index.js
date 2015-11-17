@@ -45,17 +45,6 @@ var ds = {
   },
 
   ApplyValue: function (scope, value, step) {
-    if (scope.$state$.operator.length) {
-      scope.$state$.value = ds.Operate(
-        scope,
-        scope.$state$.value,
-        scope.$state$.operator,
-        value,
-        step
-      );
-      scope.$state$.operator.length = 0;
-    }
-
     if (scope.$state$.value === ds.Undefined) {
       scope.$state$.value = value;
     }
@@ -145,16 +134,39 @@ var ds = {
   },
 
   Execute: function (step, scope, originalScope) {
+    if (step.type === BREAK) {
+      if (scope.$state$.break) {
+        return;
+      }
+      scope.$state$.break = true;
+    }
+
+    else {
+      scope.$state$.break = false;
+    }
+
     var resolve = scope.$state$.resolve;
 
-    var dotExpected = resolve.length > 0 && !(
+    var nameExpected = resolve.length === 0 || (
       resolve[resolve.length - 1].type === OPERATOR &&
       resolve[resolve.length - 1].value === '.'
     );
 
-    // if we are an assignment key
+    if (step.type === NAME && nameExpected) {
+      resolve.push(step);
+      return;
+    }
+
+    if (step.type === OPERATOR && step.value === '.') {
+      if (nameExpected) {
+        throw ds.ErrorMessage(new SyntaxError('Invalid'), step);
+      }
+      resolve.push(step);
+      return;
+    }
+
     if (step.type === OPERATOR && step.value === ':') {
-      if (!dotExpected || scope.$state$.key) {
+      if (nameExpected || scope.$state$.key) {
         throw ds.ErrorMessage(new SyntaxError('Unexpected assigment operator'), step);
       }
       scope.$state$.key = resolve.map(
@@ -162,28 +174,40 @@ var ds = {
       ).join('');
       scope.$state$.resolve = [];
       scope.$state$.value = ds.Undefined;
+      return;
     }
 
-    else if (step.type === OPERATOR && step.value !== '.') {
-      if (!dotExpected && resolve.length) {
-        throw ds.ErrorMessage(new SyntaxError('Unexpected operator'), step);
-      }
-      if (resolve.length) {
-        ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
-      }
-      scope.$state$.operator.push(step);
-    }
-
-    else if (step.type === BREAK) {
-      if (resolve.length && !dotExpected) {
-        throw ds.ErrorMessage(new SyntaxError('Unexpected syntax'), step);
-      }
-
-      if (!resolve.length) {
+    var collapse = function () {
+      if (resolve.length === 0) {
         return;
       }
 
-      ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+      if (scope.$state$.operator.length > 0) {
+        ds.Operate(scope, ds.Resolve(scope, originalScope), step);
+      }
+
+      else {
+        ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
+      }
+    };
+
+    if (step.type === OPERATOR) {
+      if (resolve.length > 0 && nameExpected) {
+        throw ds.ErrorMessage(new SyntaxError('Unexpected operator'), step);
+      }
+      collapse();
+      scope.$state$.operator.push(step);
+      return;
+    }
+
+    collapse();
+
+    resolve = scope.$state$.resolve;
+
+    if (step.type === BREAK) {
+      if (resolve.length && nameExpected) {
+        throw ds.ErrorMessage(new SyntaxError('Unexpected syntax'), step);
+      }
 
       if (scope.$state$.key) {
         scope[scope.$state$.key] = scope.$state$.value;
@@ -201,16 +225,11 @@ var ds = {
       else {
         scope.$state$.return = true;
       }
+
+      return;
     }
 
-    else {
-      if (dotExpected && !(step.type === OPERATOR && step.value === '.')) {
-        if (resolve.length) {
-          ds.ApplyValue(scope, ds.Resolve(scope, originalScope), step);
-        }
-      }
-      scope.$state$.resolve.push(step);
-    }
+    resolve.push(step);
   },
 
   Extension: '.ds',
@@ -259,7 +278,11 @@ var ds = {
 
   Number: Number,
 
-  Operate: function (scope, left, operator, right, step) {
+  Operate: function (scope, right, step) {
+    var left = scope.$state$.value;
+    var operator = scope.$state$.operator;
+    scope.$state$.operator = [];
+
     var combinedOperator = {
       position: operator[0].position,
       value: operator.map(function (o) {
@@ -267,55 +290,71 @@ var ds = {
       }).join('')
     };
 
-    if (combinedOperator.value[combinedOperator.value.length - 1] === '-') {
+    if (combinedOperator.value.length > 1 &&
+      combinedOperator.value[combinedOperator.value.length - 1] === '-') {
       combinedOperator.value = combinedOperator.value.substr(0,
                                  combinedOperator.value.length - 1);
+      if (typeof right !== 'number') {
+        debugger;
+        throw ds.ErrorMessage(new TypeError('Cannot negate a non-numeric value'), step);
+      }
       right = -1 * right;
+
+      if (combinedOperator.value.length === 0) {
+        return [right];
+      }
     }
 
-    if (combinedOperator.value === '!') {
-      return !left;
-    }
+    scope.$state$.value = (function () {
+      if (combinedOperator.value === '!') {
+        return !(
+          typeof left === 'undefined' ||
+                 left === false ||
+                 left === null
+        );
+      }
 
-    else if (combinedOperator.value === '!=') {
-      return left !== right;
-    }
+      else if (combinedOperator.value === '!=') {
+        return left !== right;
+      }
 
-    else if (combinedOperator.value === '=') {
-      return left === right;
-    }
+      else if (combinedOperator.value === '=') {
+        return left === right;
+      }
 
-    else if (combinedOperator.value === '+') {
-      return left + right;
-    }
+      else if (combinedOperator.value === '+') {
+        return left + right;
+      }
 
-    else if (combinedOperator.value === '-') {
-      return left - right;
-    }
+      else if (combinedOperator.value === '-') {
+        return left - right;
+      }
 
-    else if (combinedOperator.value === '*') {
-      return left * right;
-    }
+      else if (combinedOperator.value === '*') {
+        return left * right;
+      }
 
-    else if (combinedOperator.value === '/') {
-      return left / right;
-    }
+      else if (combinedOperator.value === '/') {
+        return left / right;
+      }
 
-    else if (combinedOperator.value === '+') {
-      return left + right;
-    }
+      else if (combinedOperator.value === '+') {
+        return left + right;
+      }
 
-    else if (combinedOperator.value === '%') {
-      return left % right;
-    }
+      else if (combinedOperator.value === '%') {
+        return left % right;
+      }
 
-    else {
-      throw ds.ErrorMessage(new SyntaxError('Operator not implemented:'),
-                            combinedOperator);
-    }
+      else {
+        throw ds.ErrorMessage(new SyntaxError('Operator not implemented:'),
+                              combinedOperator);
+      }
+    })();
   },
 
   Parse: function (source, name) {
+    var isEscape = false;
     var breaks = [-1];
     var position = function (i) {
       var positionFn = function () {
@@ -382,7 +421,29 @@ var ds = {
                  ds.Syntax.blocks[head.type] &&
                  ds.Syntax.blocks[head.type].string;
 
-      if (!isString && source[i] in ds.Syntax.open) {
+      if (!isEscape && source[i] === ds.Syntax.escape) {
+        isEscape = true;
+      }
+
+      else if (isEscape) {
+        isEscape = false;
+
+        if (isString) {
+          var add = source[i];
+
+          if (add === 'n') {
+            add = '\n';
+          }
+
+          else if (add === 't') {
+            add = '\t';
+          }
+
+          queue.value += add;
+        }
+      }
+
+      else if (!isString && source[i] in ds.Syntax.open) {
         queueToHead(i);
         previous = head;
         stack.push(previous);
@@ -424,7 +485,7 @@ var ds = {
 
       else if (ds.Syntax.separators.indexOf(source[i]) !== -1) {
         queueToHead(i);
-        head.items.push({type: BREAK, position: position(i)});
+        head.items.push({type: BREAK, force: source[i] === ',', position: position(i)});
       }
 
       else if (ds.Syntax.whitespace.indexOf(source[i]) !== -1) {
@@ -452,6 +513,7 @@ var ds = {
     var value = scope;
     var allowRead = true;
     var resolve = scope.$state$.resolve;
+    scope.$state$.resolve = [];
 
     if (resolve.length === 0) {
       return ds.Undefined;
@@ -471,7 +533,6 @@ var ds = {
       }
 
       allowRead = false;
-
       if (step.type === STRING) {
         value = step.items.map(function (i) {
           return i.value;
@@ -486,6 +547,7 @@ var ds = {
 
       else if (step.type === ARRAY) {
         var arrayScope = ds.Scope(scope);
+        arrayScope.$state$.break = true;
         arrayScope.$state$.accumulate = [];
         ds.Apply(step, originalScope)(arrayScope);
         value = arrayScope.$state$.accumulate;
@@ -508,9 +570,9 @@ var ds = {
 
         else if (step.value[0] === '@') {
           var name = step.value.substr(1);
-          value = scope['@' + name];
+          value = scope[step.value];
           if (originalScope && typeof value === 'undefined') {
-            value = originalScope['@' + name];
+            value = originalScope[step.value];
           }
           if (typeof value === 'undefined') {
             value = ds[name];
@@ -544,7 +606,6 @@ var ds = {
       }
     });
 
-    scope.$state$.resolve = [];
     return value;
   },
 
@@ -564,6 +625,7 @@ var ds = {
   String: String,
 
   Syntax: {
+    escape      : '\\',
     separators  : ['\n', ','],
     whitespace  : ['\t', ' '],
     close       : [']', ')', '}'],
