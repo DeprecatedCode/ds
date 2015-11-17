@@ -9,13 +9,13 @@ Clone this repo, then run `node . index.ds` from this folder. Paths are resolved
 
 ### Blocks
 
-`{ ... }` represents logic.
+`{ ... }` represents deferred logic.
 
 `( ... )` represents grouping.
 
-`[ ... ]` represents order.
+`[ ... ]` represents an array.
 
-`' ... '` represents string.
+`' ... '` represents a string.
 
 ### Symbols
 
@@ -23,27 +23,27 @@ All words represent symbol names.
 
 ### Operators
 
-`#` represents comment.
+`#` represents comment. `@TODO`
 
 `.` represents property.
 
 `:` represents key: value assignment.
 
-`::` represents convenience (key: key) assignment.
+`::` represents convenience (key: key) assignment. `@TODO`
 
 `+, -, *, /, %` represents arithmetic.
 
 `,` represents separation.
 
-`^` represents terminal raise.
+`^` represents terminal raise. `@TODO`
 
-`=` represents receive raised event.
+`=` represents receive raised event. `@TODO`
 
 `@` represents named injection.
 
-`<, <=, ==, !=, >=, >` represents comparison.
+`<, <=, ==, !=, >=, >` represents comparison. `@TODO`
 
-`&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT).
+`&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT). `@TODO`
 
 ## Scope Rules
 
@@ -117,7 +117,7 @@ q z     # Read: execute z in the context of q, modifying q
 # 3
 ```
 
-##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it will not create properties in the parent, because it is isolated. For example: 
+##### 6. Any scope created within another scope has first-level access to the properties created in the parent. But it will not create properties in the parent, because it is isolated. For example:
 
 ```bash
 a: 1
@@ -149,7 +149,7 @@ x: {} {a::, b: b, c: 3}
 Person: {
   firstName: 'Lady'
   lastName: 'MacBeth'
-  
+
   print get: {
     `${firstName} ${lastName}` @Console.log
   }
@@ -290,18 +290,18 @@ ValidateName: {
 Person: {
   name: @it
   title: 'Person'
-  
+
   description get: {`${title}: ${name}`}
 }
 
 Person Employee: {
   name @super
   title: 'Employee'
-  
+
   raiseSalary {
     salary: salary + @it
   }
-  
+
   description get: {`${@super} making ${salary} per year`}
 }
 
