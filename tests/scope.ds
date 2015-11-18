@@ -9,12 +9,12 @@ a: 1
 
 x: {b: 2}
 
-'2: Is b undefined? ' (b = @undefined)                L
-'3: What type is b? ' (b @type)                       L
+'2: Is b undefined? ' ('b' @exists)                   L
 
 &x  # Invoke x within current scope
 
-'4: What is b now? ' b                                L
+'3: What is b now? ' b                                L
+'4: What type is b? ' (b @type)                       L
 
 add: {&, a + b}  # Create a function which accepts arguments
 
