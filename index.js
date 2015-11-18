@@ -32,12 +32,15 @@ var ds = {
       if (!scope.$state$) {
         throw new Error('Invalid scope');
       }
+
       logic.items.forEach(function (step) {
         ds.Execute(step, scope, originalScope);
       });
+
       if (scope.$state$.return) {
-        return scope.$state$.value;
+        return scope.$state$.lastValue;
       }
+
       return scope;
     };
     fn.$logic$ = true;
@@ -45,7 +48,7 @@ var ds = {
   },
 
   ApplyValue: function (scope, value, step) {
-    if (scope.$state$.value === ds.Undefined) {
+    if (scope.$state$.value === ds.Empty) {
       scope.$state$.value = value;
     }
 
@@ -76,6 +79,10 @@ var ds = {
           });
         }
       }
+
+      else if (typeof second === 'function') {
+        return second(first);
+      }
     }
 
     else if (typeof second === 'function') {
@@ -103,6 +110,8 @@ var ds = {
   },
 
   Date: Date,
+
+  Empty: {$: 'Empty'},
 
   ErrorMessage: function (err, step) {
     var desc;
@@ -167,14 +176,14 @@ var ds = {
     }
 
     if (step.type === OPERATOR && step.value === ':') {
-      if (nameExpected || scope.$state$.key) {
+      if (nameExpected || scope.$state$.key !== ds.Empty) {
         throw ds.ErrorMessage(new SyntaxError('Unexpected assigment operator'), step);
       }
       scope.$state$.key = resolve.map(
         function (x) {return x.value;}
       ).join('');
       scope.$state$.resolve = [];
-      scope.$state$.value = ds.Undefined;
+      scope.$state$.value = ds.Empty;
       return;
     }
 
@@ -212,21 +221,18 @@ var ds = {
         scope.$state$.value = ds.Operate(scope, ds.Undefined, step);
       }
 
-      if (scope.$state$.key) {
+      if (scope.$state$.key !== ds.Empty) {
         scope[scope.$state$.key] = scope.$state$.value;
-        scope.$state$.key = ds.Undefined;
-        scope.$state$.value = ds.Undefined;
+        scope.$state$.key = ds.Empty;
+        scope.$state$.value = ds.Empty;
         scope.$state$.return = false;
       }
 
       else if ('accumulate' in scope.$state$) {
-        scope.$state$.accumulate.push(scope.$state$.value);
-        scope.$state$.value = ds.Undefined;
-        scope.$state$.return = false;
-      }
-
-      else if (step.force) {
-        scope.$state$.value = ds.Undefined;
+        if (scope.$state$.value !== ds.Empty) {
+          scope.$state$.accumulate.push(scope.$state$.value);
+        }
+        scope.$state$.value = ds.Empty;
         scope.$state$.return = false;
       }
 
@@ -234,6 +240,9 @@ var ds = {
         scope.$state$.return = true;
       }
 
+      scope.$state$.lastValue = scope.$state$.value === ds.Empty ?
+                                  ds.Undefined : scope.$state$.value;
+      scope.$state$.value = ds.Empty;
       return;
     }
 
@@ -318,11 +327,53 @@ var ds = {
     }
 
     else if (combinedOperator.value === '&') {
-      var fn = scope['@it'];
-      if (fn.$logic$) {
-        fn(scope);
+      if (left !== ds.Empty) {
+        throw ds.ErrorMessage(new SyntaxError('Invalid &'), step);
       }
-      return;
+
+      if (right) {
+        if (typeof right === 'function' && right.$logic$) {
+          right(scope);
+        }
+
+        else if (Array.isArray(right)) {
+          if (!Array.isArray(scope.$state$.accumulate)) {
+            throw ds.ErrorMessage(
+              new TypeError('Cannot merge array and object'), step
+            );
+          }
+          right.forEach(function (item) {
+            scope.$state$.accumulate.push(item);
+          });
+        }
+
+        else if (typeof right === 'object') {
+          Object.keys(right).forEach(function (key) {
+            scope[key] = right[key];
+          });
+        }
+
+        else {
+          throw ds.ErrorMessage(
+            new TypeError('Value must be a function, object, or array'), step
+          );
+        }
+      }
+
+      else {
+        var fn = scope['@it'];
+        if (typeof fn === 'function' && fn.$logic$) {
+          fn(scope);
+        }
+
+        else {
+          throw ds.ErrorMessage(
+            new TypeError('Value must be a function'), step
+          );
+        }
+      }
+
+      return ds.Empty;
     }
 
     else if (combinedOperator.value === '!=') {
@@ -334,6 +385,30 @@ var ds = {
     }
 
     else if (combinedOperator.value === '+') {
+      if (typeof left === 'function') {
+        if (typeof right === 'function') {
+          var fn = function (scope) {
+            left(scope);
+            right(scope);
+            return scope;
+          };
+          fn.$logic$ = true;
+          return fn;
+        }
+
+        else {
+          throw ds.ErrorMessage(
+            new Error('Cannot add function and ' + ds.Type(right)), step
+          );
+        }
+      }
+
+      else if (typeof right === 'function') {
+        throw ds.ErrorMessage(
+          new Error('Cannot add ' + ds.Type(left) + ' and function'), step
+        );
+      }
+
       return left + right;
     }
 
@@ -349,10 +424,6 @@ var ds = {
       return left / right;
     }
 
-    else if (combinedOperator.value === '+') {
-      return left + right;
-    }
-
     else if (combinedOperator.value === '%') {
       return left % right;
     }
@@ -365,6 +436,7 @@ var ds = {
 
   Parse: function (source, name) {
     var isEscape = false;
+    var isComment = false;
     var breaks = [-1];
     var position = function (i) {
       var positionFn = function () {
@@ -424,6 +496,7 @@ var ds = {
 
     for (var i = 0; i < source.length; i++) {
       if (source[i] === '\n') {
+        isComment = false;
         breaks.push(i);
       }
 
@@ -431,7 +504,16 @@ var ds = {
                  ds.Syntax.blocks[head.type] &&
                  ds.Syntax.blocks[head.type].string;
 
-      if (!isEscape && source[i] === ds.Syntax.escape) {
+      if (isComment) {
+        // do nothing
+      }
+
+      else if (!isString && !isComment && source[i] === ds.Syntax.comment) {
+        isComment = true;
+        continue;
+      }
+
+      else if (!isEscape && source[i] === ds.Syntax.escape) {
         isEscape = true;
       }
 
@@ -495,7 +577,7 @@ var ds = {
 
       else if (ds.Syntax.separators.indexOf(source[i]) !== -1) {
         queueToHead(i);
-        head.items.push({type: BREAK, force: source[i] === ',', position: position(i)});
+        head.items.push({type: BREAK, position: position(i)});
       }
 
       else if (ds.Syntax.whitespace.indexOf(source[i]) !== -1) {
@@ -552,7 +634,7 @@ var ds = {
       else if (step.type === GROUP) {
         var groupScope = ds.Scope(scope);
         ds.Apply(step, originalScope)(groupScope);
-        value = groupScope.$state$.value;
+        value = groupScope.$state$.lastValue;
       }
 
       else if (step.type === ARRAY) {
@@ -623,7 +705,8 @@ var ds = {
     var scope = Object.create(parentScope || Object.prototype);
     Object.defineProperty(scope, '$state$', {
       value: {
-        value: ds.Undefined,
+        key: ds.Empty,
+        value: ds.Empty,
         operator: [],
         resolve: []
       },
@@ -636,6 +719,7 @@ var ds = {
 
   Syntax: {
     escape      : '\\',
+    comment     : '#',
     separators  : ['\n', ','],
     whitespace  : ['\t', ' '],
     close       : [']', ')', '}'],

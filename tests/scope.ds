@@ -1,3 +1,51 @@
-'Extract keys from scope' @Console.log
+L: @Console.log
 
-{} ({a: 1, b: 2, c: 3, d: 4, e: 5} {a, c, e})
+'-------------------------------'                     L
+'DefaultScript Test Suite: Scope'                     L
+'-------------------------------'                     L
+
+a: 1
+'1: Value a is: ' a                                   L
+
+x: {b: 2}
+
+'2: Is b undefined? ' (b = @Undefined)                L
+
+'3: What type is b? ' (b @Type)                       L
+
+&x  # Invoke x within current scope
+
+'4: What is b now? ' b                                L
+
+add: {&, a + b}  # Create a function which accepts arguments
+
+'5: What type is add? ' (add @Type)                   L
+'6: What is 10 + 20? ' (
+  {a: 10, b: 20} add
+)                                                     L
+
+'7: Scope is isolated, so our a is still: ' a         L
+
+'8: Scope inherits, so partial args are ok: ' (
+  {b: 100} add
+)                                                     L
+
+'9: Scopes can be merged with the + operator: ' (
+  {b: 90} + {a: 9} add
+)                                                     L
+
+object: @{key: 'value', child: @{data: [1, 2, 3]}}
+
+'10: Create an object with key and value: ' (
+  object @JSON.stringify
+)                                                     L
+
+'11: What is the type of object? ' (
+  object @Type
+)                                                     L
+
+new: @{&object, key: 'other'}
+
+'11: Create a new object based on object: ' (
+  new @JSON.stringify
+)                                                     L

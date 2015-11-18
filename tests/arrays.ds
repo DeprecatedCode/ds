@@ -1,29 +1,40 @@
+L: @Console.log
+
+'--------------------------------'                               L
+'DefaultScript Test Suite: Arrays'                               L
+'--------------------------------'                               L
+
 cart: ['apple', 'banana', 'carrot', 'apple', 'beet']
 
-'There are ' cart.length ' items in the cart.' @Console.log
+'1: There are ' cart.length ' items in the cart.'                L
 
 isFruit: {@it ['apple', 'banana', 'orange'].indexOf != -1}
 
-'Is an apple a fruit? ' ('apple' isFruit) @Console.log
+'2: Is an apple a fruit? ' ('apple' isFruit)                     L
 
-truckTalk: {&, 0 colors ' fire trucks are everywhere.'}
+truckTalk: {&, '3: ' (0 colors) ' fire trucks are everywhere.'}
 
-{colors: ['Red', 'Blue']} truckTalk @Console.log
+{colors: ['Red', 'Blue']} truckTalk                              L
 
 exclude: {
-  array: @it,
-  {condition: @it,
-    {@it condition !} array.filter
-  }
+  filter: @it.filter
+  {condition: @it, {@it condition !} filter}
 }
 
 fruitOnly: isFruit cart.filter
 nonFruit: isFruit (cart exclude)
 
-'The cart has ' fruitOnly.length ' fruits and '
-                nonFruit.length  ' other items in it.' @Console.log
+'4: The cart has ' fruitOnly.length ' fruits and '     \
+                nonFruit.length  ' other items in it.'           L
 
-'The ' (1 ['first', 'second'])
-  ' item in the cart is a delicious yellow '
-  (1 cart) '.'
-  @Console.log
+'5: The ' (1 ['first', 'second'])            \
+  ' item in the cart is a delicious yellow ' \
+  (1 cart) '.'                                                   L
+
+'6: The cart has a type of: ' (cart @Type)                       L
+
+biggerCart: ['lemon', &cart, 'pineapple']
+
+'7: Create a bigger cart with the old cart in the middle: ' (
+  ' - ' biggerCart.join '!'
+)                                                                L
