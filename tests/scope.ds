@@ -48,3 +48,11 @@ new: @{&object, key: 'other'}
 '11: Create a new object based on object: ' (
   new @JSON.stringify
 )                                                     L
+
+'12: Use convenience (key: key) assignment: ' (
+  @{:a, :b} @JSON.stringify
+)                                                     L
+
+'13: Use convenience expressions: ' (
+  @{:a + 2, :b * 10} @JSON.stringify
+)                                                     L

@@ -176,9 +176,18 @@ var ds = {
     }
 
     if (step.type === OPERATOR && step.value === ':') {
-      if (nameExpected || scope.$state$.key !== ds.Empty) {
+      if (nameExpected) {
+        if (resolve.length) {
+          throw ds.ErrorMessage(new SyntaxError('Unexpected assigment operator'), step);
+        }
+        scope.$state$.convenienceKey = true;
+        return;
+      }
+
+      if (scope.$state$.key !== ds.Empty) {
         throw ds.ErrorMessage(new SyntaxError('Unexpected assigment operator'), step);
       }
+
       scope.$state$.key = resolve.map(
         function (x) {return x.value;}
       ).join('');
@@ -650,6 +659,11 @@ var ds = {
       }
 
       else if (step.type === NAME) {
+        if (scope.$state$.convenienceKey) {
+          scope.$state$.convenienceKey = false;
+          scope.$state$.key = step.value;
+        }
+
         if (/^\d+$/.test(step.value)) {
           if (typeof value === 'number') {
             value = parseFloat(value + '.' + step.value);

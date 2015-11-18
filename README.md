@@ -23,24 +23,28 @@ All words represent symbol names.
 
 ### Operators
 
-`#` represents comment. `@TODO`
+`\` is the escape character.
 
-`.` represents property.
+`#` is a line comment.
 
-`:` represents key: value assignment.
+`.` represents property access.
 
-`::` represents convenience (key: key) assignment. `@TODO`
+`key: value` represents key: value assignment.
+
+`:key` represents convenience (key: key) assignment.
+
+`+` represents merge functions.
 
 `+, -, *, /, %` represents arithmetic.
 
-`,` represents separation.
+`,` represents a break.
 
 `^` represents terminal raise. `@TODO`
 
-`=` represents receive raised event. `@TODO`
+`|` represents receive raised event. `@TODO`
 
 `@` represents named injection.
 
-`<, <=, ==, !=, >=, >` represents comparison. `@TODO`
+`<, <=, =, !=, >=, >` represents comparison. `@TODO`
 
 `&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT). `@TODO`
