@@ -750,6 +750,12 @@ var ds = {
 };
 
 [
+  'type'
+].forEach(function (key) {
+  ds.global[key] = ds[key];
+});
+
+[
   'Array',
   'Boolean',
   'Date',
