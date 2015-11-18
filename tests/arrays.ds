@@ -1,5 +1,5 @@
-L: @Console.log
-
+L: @console.log
+d
 '--------------------------------'                               L
 'DefaultScript Test Suite: Arrays'                               L
 '--------------------------------'                               L
@@ -31,7 +31,7 @@ nonFruit: isFruit (cart exclude)
   ' item in the cart is a delicious yellow ' \
   (1 cart) '.'                                                   L
 
-'6: The cart has a type of: ' (cart @Type)                       L
+'6: The cart has a type of: ' (cart @type)                       L
 
 biggerCart: ['lemon', &cart, 'pineapple']
 

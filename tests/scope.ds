@@ -1,4 +1,4 @@
-L: @Console.log
+L: @console.log
 
 '-------------------------------'                     L
 'DefaultScript Test Suite: Scope'                     L
@@ -9,8 +9,8 @@ a: 1
 
 x: {b: 2}
 
-'2: Is b undefined? ' (b = @Undefined)                L
-'3: What type is b? ' (b @Type)                       L
+'2: Is b undefined? ' (b = @undefined)                L
+'3: What type is b? ' (b @type)                       L
 
 &x  # Invoke x within current scope
 
@@ -18,7 +18,7 @@ x: {b: 2}
 
 add: {&, a + b}  # Create a function which accepts arguments
 
-'5: What type is add? ' (add @Type)                   L
+'5: What type is add? ' (add @type)                   L
 '6: What is 10 + 20? ' (
   {a: 10, b: 20} add
 )                                                     L
@@ -40,7 +40,7 @@ object: @{key: 'value', child: @{data: [1, 2, 3]}}
 )                                                     L
 
 '11: What is the type of object? ' (
-  object @Type
+  object @type
 )                                                     L
 
 new: @{&object, key: 'other'}
