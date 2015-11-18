@@ -2,8 +2,7 @@
 
 # Note that the variable a is isolated to the (group)
 3.4 + 4 - - 2.6 + (a: 10, 22/7 - a - 0.00126) \
-  {'Pi is about ' @it '!'} \
-  @console.log
+  {'Pi is about ' @it '!'} @console.log
 
 # a is still undefined
 'Variable a is ' (a @type) '!' @console.log
