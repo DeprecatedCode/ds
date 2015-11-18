@@ -27,6 +27,13 @@ var path = require('path');
   *   ds.console.log(ds.parse('1 + 3')(ds.scope()));
   */
 var ds = {
+  global: {
+    true: true,
+    false: false,
+    null: null,
+    undefined: undefined
+  },
+
   apply: function (logic, originalScope) {
     var fn = function applyScope(scope) {
       if (!scope.$state$) {
@@ -107,7 +114,7 @@ var ds = {
 
   empty: {$: 'Empty'},
 
-  errormessage: function (err, step) {
+  errorMessage: function (err, step) {
     var desc;
 
     if ('value' in step) {
@@ -220,7 +227,7 @@ var ds = {
 
     if (step.type === BREAK) {
       if (scope.$state$.operator.length > 0) {
-        scope.$state$.value = ds.operate(scope, ds.undefined, step);
+        scope.$state$.value = ds.operate(scope, undefined, step);
       }
 
       if (scope.$state$.key !== ds.empty) {
@@ -243,7 +250,7 @@ var ds = {
       }
 
       scope.$state$.lastValue = scope.$state$.value === ds.empty ?
-                                  ds.undefined : scope.$state$.value;
+                                  undefined : scope.$state$.value;
       scope.$state$.value = ds.empty;
       return;
     }
@@ -252,8 +259,6 @@ var ds = {
   },
 
   extension: '.ds',
-
-  false: false,
 
   group: {},
 
@@ -288,8 +293,6 @@ var ds = {
       items: []
     };
   },
-
-  null: null,
 
   operate: function (scope, right, step) {
     var left = scope.$state$.value;
@@ -600,7 +603,7 @@ var ds = {
     scope.$state$.resolve = [];
 
     if (resolve.length === 0) {
-      return ds.undefined;
+      return undefined;
     }
 
     resolve.forEach(function (step) {
@@ -664,7 +667,12 @@ var ds = {
             value = originalScope[step.value];
           }
           if (typeof value === 'undefined') {
-            value = ds[name];
+            if (!(value in ds.global)) {
+              throw ds.errorMessage(
+                new TypeError('Injectable ' + step.value + ' not found'), step
+              );
+            }
+            value = ds.global[name];
           }
         }
 
@@ -733,16 +741,12 @@ var ds = {
     })({})
   },
 
-  true: true,
-
   type: function (thing) {
     if (Array.isArray(thing)) {
       return 'array';
     }
     return typeof thing;
-  },
-
-  undefined: (function () {})()
+  }
 };
 
 [
@@ -794,7 +798,6 @@ var ds = {
   'escape',
   'unescape',
   'console',
-  'global',
   'process'
 ].forEach(function (key) {
   if (key in ds) {
@@ -803,13 +806,16 @@ var ds = {
   if (!(key in global)) {
     throw new Error('Module not available: ' + key);
   }
-  ds[key] = global[key];
+  ds.global[key] = global[key];
 });
 
 if (require.main === module) {
-  var name = ds.process.argv[2];
+  var name = process.argv[2];
   if (typeof name !== 'string') {
     throw new Error('Usage: node ds source.ds');
+  }
+  if (name === '--help') {
+    return require('./help')(ds);
   }
   ds.import(name);
 }
