@@ -10,7 +10,6 @@ a: 1
 x: {b: 2}
 
 '2: Is b undefined? ' (b = @Undefined)                L
-
 '3: What type is b? ' (b @Type)                       L
 
 &x  # Invoke x within current scope
