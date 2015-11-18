@@ -5,7 +5,9 @@
   {'Pi is about ' @it '!'} @console.log
 
 # a is still undefined
-'Variable a is ' (a @type) '!' @console.log
+'Does variable a exist on this scope? ' (
+  'a' @exists {@true ? 'Yes', @false ? 'No'}
+) '!' @console.log
 
 {@it '...' @console.log} [
   'Three',

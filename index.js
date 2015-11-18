@@ -12,6 +12,8 @@ const ARRAY    = 4;
 const STRING   = 5;
 const BREAK    = 6;
 
+const IT = '@it';
+
 var fs = require('fs');
 var path = require('path');
 
@@ -70,14 +72,14 @@ var ds = {
       if (first.$logic$) {
         if (typeof second === 'function' && second.$logic$) {
           var newScope = ds.scope(scope);
-          newScope['@it'] = first;
+          newScope[IT] = first;
           return second(newScope);
         }
 
         else if (typeof second === 'function') {
           return second(function (it) {
             var newScope = ds.scope(scope);
-            newScope['@it'] = it;
+            newScope[IT] = it;
             return first(newScope);
           });
         }
@@ -91,7 +93,7 @@ var ds = {
     else if (typeof second === 'function') {
       if (second.$logic$) {
         var newScope = ds.scope(scope);
-        newScope['@it'] = first;
+        newScope[IT] = first;
         return second(newScope);
       }
 
@@ -118,7 +120,7 @@ var ds = {
     var desc;
 
     if ('value' in step) {
-      desc = step.value;
+      desc = '`' + step.value + '`';
     }
 
     else {
@@ -137,7 +139,7 @@ var ds = {
 
     err.name = '@' + err.name;
 
-    err.message = err.message + ' ' + desc + ' at ' + step.position() + '\n' +
+    err.message = err.message + ' near ' + desc + ' at ' + step.position() + '\n' +
       step.position.getSource(true);
 
     return err;
@@ -145,6 +147,7 @@ var ds = {
 
   execute: function (step, scope, originalScope) {
     if (step.type === BREAK) {
+      scope.$state$.conditionFailure = false;
       if (scope.$state$.break) {
         return;
       }
@@ -153,6 +156,10 @@ var ds = {
 
     else {
       scope.$state$.break = false;
+    }
+
+    if (scope.$state$.conditionFailure) {
+      return;
     }
 
     var resolve = scope.$state$.resolve;
@@ -172,6 +179,34 @@ var ds = {
         throw ds.errorMessage(new SyntaxError('Invalid'), step);
       }
       resolve.push(step);
+      return;
+    }
+
+    var collapse = function () {
+      if (resolve.length === 0) {
+        return;
+      }
+
+      var value = ds.resolve(scope, originalScope);
+
+      if (scope.$state$.operator.length > 0) {
+        scope.$state$.value = ds.operate(scope, value, step);
+      }
+
+      else {
+        ds.applyValue(scope, value, step);
+      }
+    };
+
+    if (step.type === OPERATOR && step.value === '?') {
+      if (!resolve.length) {
+        throw ds.errorMessage(new SyntaxError('No condition found'), step);
+      }
+      collapse();
+      if (scope[IT] !== scope.$state$.value) {
+        scope.$state$.conditionFailure = true;
+      }
+      scope.$state$.value = ds.empty;
       return;
     }
 
@@ -195,22 +230,6 @@ var ds = {
       scope.$state$.value = ds.empty;
       return;
     }
-
-    var collapse = function () {
-      if (resolve.length === 0) {
-        return;
-      }
-
-      var value = ds.resolve(scope, originalScope);
-
-      if (scope.$state$.operator.length > 0) {
-        scope.$state$.value = ds.operate(scope, value, step);
-      }
-
-      else {
-        ds.applyValue(scope, value, step);
-      }
-    };
 
     if (step.type === OPERATOR) {
       if (resolve.length > 0 && nameExpected) {
@@ -256,6 +275,11 @@ var ds = {
     }
 
     resolve.push(step);
+  },
+
+  exists: function (scope) {
+    var name = scope[IT];
+    return typeof scope[name] !== 'undefined';
   },
 
   extension: '.ds',
@@ -360,7 +384,7 @@ var ds = {
       }
 
       else {
-        var fn = scope['@it'];
+        var fn = scope[IT];
         if (typeof fn === 'function' && fn.$logic$) {
           fn(scope);
         }
@@ -682,7 +706,9 @@ var ds = {
           }
 
           else if (typeof value === 'undefined') {
-            throw ds.errorMessage(new TypeError('Cannot read property of @undefined:'), step);
+            throw ds.errorMessage(
+              new TypeError('Cannot read property of @undefined:'), step
+            );
           }
 
           var lastValue = value;
@@ -694,6 +720,12 @@ var ds = {
 
           if (typeof value === 'function' && !value.$logic$) {
             value = value.bind(lastValue);
+          }
+
+          if (typeof value === 'undefined') {
+            throw ds.errorMessage(
+              new TypeError(step.value + ' is not defined'), step
+            );
           }
         }
       }
@@ -750,6 +782,7 @@ var ds = {
 };
 
 [
+  'exists',
   'type'
 ].forEach(function (key) {
   ds.global[key] = ds[key];
