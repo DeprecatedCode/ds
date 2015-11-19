@@ -76,14 +76,22 @@ var ds = {
       if (first.$logic$) {
         if (typeof second === 'function' && second.$logic$) {
           var newScope = ds.scope(scope);
-          newScope[IT] = first;
+
+          if (typeof first !== 'undefined' && first !== ds.empty) {
+            newScope[IT] = first;
+          }
+
           return second(newScope);
         }
 
         else if (typeof second === 'function') {
           return second(function (it) {
             var newScope = ds.scope(scope);
-            newScope[IT] = it;
+
+            if (typeof it !== 'undefined' && it !== ds.empty) {
+              newScope[IT] = it;
+            }
+
             return first(newScope);
           });
         }
@@ -91,7 +99,11 @@ var ds = {
         else if (Array.isArray(second)) {
           var newScope = ds.scope(scope);
           return second.map(function (item) {
-            newScope[IT] = item;
+
+            if (typeof item !== 'undefined' && item !== ds.empty) {
+              newScope[IT] = item;
+            }
+
             return first(newScope);
           });
         }
@@ -99,7 +111,11 @@ var ds = {
 
       else if (typeof second === 'function' && second.$logic$) {
         var newScope = ds.scope(scope);
-        newScope[IT] = first;
+
+        if (typeof first !== 'undefined' && first !== ds.empty) {
+          newScope[IT] = first;
+        }
+
         return second(newScope);
       }
 
@@ -111,7 +127,10 @@ var ds = {
     else if (typeof second === 'function') {
       if (second.$logic$) {
         var newScope = ds.scope(scope);
-        newScope[IT] = first;
+
+        if (typeof first !== 'undefined' && first !== ds.empty) {
+          newScope[IT] = first;
+        }
 
         if (typeof first === 'object' && first.$populate$) {
           Object.keys(first).forEach(function (key) {
@@ -713,20 +732,24 @@ var ds = {
           var name = step.value.substr(1);
 
           if (name === '') {
-            return undefined;
+            value = undefined;
           }
 
-          value = scope[step.value];
-          if (originalScope && typeof value === 'undefined') {
-            value = originalScope[step.value];
-          }
-          if (typeof value === 'undefined') {
-            if (!(name in ds.global)) {
-              throw ds.errorMessage(
-                new TypeError('Injectable ' + step.value + ' not found'), step
-              );
+          else {
+            value = scope[step.value];
+
+            if (originalScope && typeof value === 'undefined') {
+              value = originalScope[step.value];
             }
-            value = ds.global[name];
+
+            if (typeof value === 'undefined') {
+              if (!(name in ds.global)) {
+                throw ds.errorMessage(
+                  new TypeError('Injectable ' + step.value + ' not found'), step
+                );
+              }
+              value = ds.global[name];
+            }
           }
         }
 
