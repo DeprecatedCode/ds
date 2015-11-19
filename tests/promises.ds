@@ -4,14 +4,27 @@ L: @console.log
 'DefaultScript Test Suite: Promises'                    L
 '----------------------------------'                    L
 
-a: @defer
+a: @deferred
 
 a.promise {
   then {
-    'Promise resolved: ' @it                            L
+    'Promise a resolved: ' @it                            L
+    100 - @it b.reject
   }
   catch {
-    'Promise failed: '   @it                            L
+    'Promise a failed: '   @it                            L
+    100 - @it b.resolve
+  }
+}
+
+b: @deferred
+
+b.promise {
+  then {
+    'Promise b resolved: ' @it                            L
+  }
+  catch {
+    'Promise b failed: '   @it                            L
   }
 }
 

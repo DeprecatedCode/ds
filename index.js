@@ -69,6 +69,10 @@ var ds = {
 
   combine: function (first, second, scope, step) {
     if (typeof first === 'function') {
+      if (first.$trap$) {
+        first(second);
+        return ds.empty;
+      }
       if (first.$logic$) {
         if (typeof second === 'function' && second.$logic$) {
           var newScope = ds.scope(scope);
@@ -93,6 +97,12 @@ var ds = {
         }
       }
 
+      else if (typeof second === 'function' && second.$logic$) {
+        var newScope = ds.scope(scope);
+        newScope[IT] = first;
+        return second(newScope);
+      }
+
       else if (typeof second === 'function') {
         return second(first);
       }
@@ -102,6 +112,13 @@ var ds = {
       if (second.$logic$) {
         var newScope = ds.scope(scope);
         newScope[IT] = first;
+
+        if (typeof first === 'object' && first.$populate$) {
+          Object.keys(first).forEach(function (key) {
+            newScope[key] = first[key];
+          });
+        }
+
         return second(newScope);
       }
 
@@ -699,7 +716,7 @@ var ds = {
             value = originalScope[step.value];
           }
           if (typeof value === 'undefined') {
-            if (!(value in ds.global)) {
+            if (!(name in ds.global)) {
               throw ds.errorMessage(
                 new TypeError('Injectable ' + step.value + ' not found'), step
               );
@@ -726,7 +743,7 @@ var ds = {
             value = originalScope[step.value];
           }
 
-          if (typeof value === 'function' && !value.$logic$) {
+          if (typeof value === 'function' && !value.$logic$ && !value.$trap$) {
             value = value.bind(lastValue);
           }
 
@@ -794,6 +811,48 @@ var ds = {
   'type'
 ].forEach(function (key) {
   ds.global[key] = ds[key];
+});
+
+Object.defineProperty(ds.global, 'deferred', {
+  get: function () {
+    var onResolve = [];
+    var resolve = function (scope) {
+      onResolve.map(function (fn) {
+        fn(scope);
+      });
+    };
+    resolve.$logic$ = true;
+
+    var onReject = [];
+    var reject = function (scope) {
+      onReject.map(function (fn) {
+        fn(scope);
+      });
+    };
+    reject.$logic$ = true;
+
+    var trap = function (fn) {
+      fn.$trap$ = true;
+      return fn;
+    };
+
+    var promise = {
+      then: trap(function (fn) {
+        onResolve.push(fn);
+      }),
+      catch: trap(function (fn) {
+        onReject.push(fn);
+      })
+    };
+
+    promise.$populate$ = true;
+
+    return {
+      resolve: resolve,
+      reject: reject,
+      promise: promise
+    };
+  }
 });
 
 [
