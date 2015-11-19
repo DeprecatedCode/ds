@@ -8,11 +8,11 @@ a: @deferred
 
 a.promise {
   then {
-    'Promise a resolved: ' @it                            L
+    'Promise a resolved: ' @it                          L
     100 - @it b.reject
   }
   catch {
-    'Promise a failed: '   @it                            L
+    'Promise a failed: '   @it                          L
     100 - @it b.resolve
   }
 }
@@ -21,10 +21,10 @@ b: @deferred
 
 b.promise {
   then {
-    'Promise b resolved: ' @it                            L
+    'Promise b resolved: ' @it                          L
   }
   catch {
-    'Promise b failed: '   @it                            L
+    'Promise b failed: '   @it                          L
   }
 }
 
