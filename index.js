@@ -711,6 +711,11 @@ var ds = {
 
         else if (step.value[0] === '@') {
           var name = step.value.substr(1);
+
+          if (name === '') {
+            return undefined;
+          }
+
           value = scope[step.value];
           if (originalScope && typeof value === 'undefined') {
             value = originalScope[step.value];
