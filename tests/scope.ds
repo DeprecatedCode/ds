@@ -9,7 +9,7 @@ a: 1
 
 x: {b: 2}
 
-'2: Is b undefined? ' ('b' @exists)                   L
+'2: Is b defined? ' ('b' @exists)                     L
 
 &x  # Invoke x within current scope
 

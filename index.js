@@ -83,6 +83,14 @@ var ds = {
             return first(newScope);
           });
         }
+
+        else if (Array.isArray(second)) {
+          var newScope = ds.scope(scope);
+          return second.map(function (item) {
+            newScope[IT] = item;
+            return first(newScope);
+          });
+        }
       }
 
       else if (typeof second === 'function') {

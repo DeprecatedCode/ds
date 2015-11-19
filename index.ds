@@ -9,10 +9,12 @@
   'a' @exists {@true ? 'Yes', @false ? 'No'}
 ) '!' @console.log
 
-{@it '...' @console.log} [
-  'Three',
-  'Two',
+{@ @it.toUpperCase '...' @console.log} [
+  'Three'
+  'Two'
   'One'
-].forEach
+]
 
 'Liftoff!' @console.log
+
+@false @console.log
