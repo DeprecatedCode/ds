@@ -1,0 +1,49 @@
+@test 'logic blocks' {
+
+  @test 'can set and read variables' {
+    a: 5
+    a @expect 5
+
+    @test 'inside nested blocks' {
+      b: 7
+      @{b} @expect 7
+
+      @{@{@{@{@{a}}}}} @expect 5
+        @{@{@{@{a}}}} @expect 5
+          @{@{@{a}}} @expect 5
+            @{@{a}} @expect 5
+              @{a} @expect 5
+    }
+  }
+
+  @test 'have the correct type' {
+    {} @type @expect 'function'
+  }
+
+  @test 'are not automatically invoked' {
+    x: []
+    {1 x.push}
+    x.length @expect 0
+    @{1 x.push}
+    x.length @expect 1
+  }
+
+  @test 'can be passed' {
+    @test 'a number' {
+      4 {@it + 5} @expect 9
+    }
+
+    @test 'another logic block' {
+      {x: 3} {x: 100, &, y: 6, x + y} @expect 9
+      {x + 9} {x: 1, 5 + (@ @it)} @expect 15
+    }
+
+    @test 'a string' {
+      'hello' {@it ' world'} @expect 'hello world'
+    }
+
+    @test 'a built-in function' {
+      @Math.max {@Math @args [25, 50] @it} @expect 50
+    }
+  }
+}

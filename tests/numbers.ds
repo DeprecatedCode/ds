@@ -1,0 +1,18 @@
+@test 'can add' {
+  @test 'floats' {
+    3.333 + 6.666 @expect 9.999
+  }
+
+  @test 'positive numbers' {
+    5 + 4 @expect 9
+    @true @expect 4
+  }
+
+  @test 'negative numbers' {
+    -5 + -4 @expect (-9)
+  }
+
+  @test 'positive and negative numbers' {
+    -5 + 4 @expect (-1)
+  }
+}

@@ -1,0 +1,12 @@
+#!/bin/sh
+while true; do
+  which inotifywait || sudo apt-get install -yq inotify-tools
+  clear
+  echo "(test) Automatically runs DefaultScript tests when files change"
+  for f in tests/*.ds
+    do echo "Test $f:"
+    node . $f
+  done
+  echo '(test) Waiting for changes'
+  inotifywait -r -e modify -e create -e delete -e move tests index.js 2>/dev/null
+done

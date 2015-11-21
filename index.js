@@ -17,6 +17,16 @@ const IT = '@it';
 var fs = require('fs');
 var path = require('path');
 
+var $trap$ = function (fn) {
+  fn.$trap$ = true;
+  return fn;
+};
+
+var $logic$ = function (fn) {
+  fn.$logic$ = true;
+  return fn;
+};
+
  /**
   * This file can be used in the following modes:
   *
@@ -33,11 +43,62 @@ var ds = {
     true: true,
     false: false,
     null: null,
-    undefined: undefined
+    undefined: undefined,
+    args: function (self) {
+      return $trap$(function (args) {
+        return $trap$(function (fn) {
+          return fn.apply(self, args);
+        });
+      });
+    },
+    test: $trap$(function (description, scope) {
+      if (typeof description !== 'string') {
+        throw new Error('@test must be preceded by a string');
+      }
+
+      var testScope = ds.scope(scope);
+      if (!Array.isArray(testScope.$test$)) {
+        testScope.$test$ = [];
+      }
+
+      testScope.$test$ = testScope.$test$.slice();
+      testScope.$test$.push(description);
+
+      return $trap$(function (block, scope) {
+        if (typeof block !== 'function' || !block.$logic$) {
+          throw new Error('@test must be followed by a logic block');
+        }
+
+        var blockScope = ds.scope(testScope);
+        blockScope.$expectations$ = [];
+        block(blockScope);
+        if (blockScope.$expectations$.length > 0) {
+          var result = [
+            blockScope.$expectations$.filter(function (e) {
+              return e[0] === e[1];
+            }).length,
+            blockScope.$expectations$.length
+          ].join('/') + ' passed.'
+          console.log('  -', testScope.$test$.join(' ') + ':', result);
+        }
+
+        blockScope.$expectations$.forEach(function (e) {
+          if (e[0] !== e[1]) {
+            console.log('    x [fail] ' + e[0] + ' was expected to be ' + e[1]);
+          }
+        });
+      });
+    }),
+    expect: $logic$(function (scope) {
+      var value = scope[IT];
+      return $trap$(function (expected) {
+        scope.$expectations$.push([value, expected]);
+      });
+    })
   },
 
   apply: function (logic, originalScope) {
-    var fn = function applyScope(scope) {
+    return $logic$(function applyScope(scope) {
       if (!scope.$state$) {
         throw new Error('Invalid scope');
       }
@@ -51,9 +112,7 @@ var ds = {
       }
 
       return scope;
-    };
-    fn.$logic$ = true;
-    return fn;
+    });
   },
 
   applyValue: function (scope, value, step) {
@@ -70,8 +129,7 @@ var ds = {
   combine: function (first, second, scope, step) {
     if (typeof first === 'function') {
       if (first.$trap$) {
-        first(second);
-        return ds.empty;
+        return first(second, scope);
       }
       if (first.$logic$) {
         if (typeof second === 'function' && second.$logic$) {
@@ -454,13 +512,11 @@ var ds = {
     else if (combinedOperator.value === '+') {
       if (typeof left === 'function') {
         if (typeof right === 'function') {
-          var fn = function (scope) {
+          return $logic$(function (scope) {
             left(scope);
             right(scope);
             return scope;
-          };
-          fn.$logic$ = true;
-          return fn;
+          });
         }
 
         else {
@@ -844,36 +900,28 @@ var ds = {
 Object.defineProperty(ds.global, 'deferred', {
   get: function () {
     var onResolve = [];
-    var resolve = function (scope) {
+    var resolve = $logic$(function (scope) {
       onResolve.map(function (fn) {
         fn(scope);
       });
-    };
-    resolve.$logic$ = true;
+    });
 
     var onReject = [];
-    var reject = function (scope) {
+    var reject = $logic$(function (scope) {
       onReject.map(function (fn) {
         fn(scope);
       });
-    };
-    reject.$logic$ = true;
-
-    var trap = function (fn) {
-      fn.$trap$ = true;
-      return fn;
-    };
+    });
 
     var promise = {
-      then: trap(function (fn) {
+      $populate$: true,
+      then: $trap$(function (fn) {
         onResolve.push(fn);
       }),
-      catch: trap(function (fn) {
+      catch: $trap$(function (fn) {
         onReject.push(fn);
       })
     };
-
-    promise.$populate$ = true;
 
     return {
       resolve: resolve,
