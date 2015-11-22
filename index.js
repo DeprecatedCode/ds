@@ -27,6 +27,13 @@ var $logic$ = function (fn) {
   return fn;
 };
 
+var literals = {
+  'true':       true,
+  'false':      false,
+  'null':       null,
+  'undefined':  undefined,
+};
+
  /**
   * This file can be used in the following modes:
   *
@@ -51,10 +58,6 @@ var ds = {
     return a === b;
   },
   global: {
-    true: true,
-    false: false,
-    null: null,
-    undefined: undefined,
     args: function (self) {
       return $trap$(function (args) {
         return $trap$(function (fn) {
@@ -813,7 +816,11 @@ var ds = {
           scope.$state$.key = step.value;
         }
 
-        if (/^\d+$/.test(step.value)) {
+        if (step.value in literals) {
+          value = literals[step.value];
+        }
+
+        else if (/^\d+$/.test(step.value)) {
           if (typeof value === 'number') {
             value = parseFloat(value + '.' + step.value);
           }
@@ -855,7 +862,7 @@ var ds = {
 
           else if (typeof value === 'undefined') {
             throw ds.errorMessage(
-              new TypeError('Cannot read property of @undefined:'), step
+              new TypeError('Cannot read property of undefined:'), step
             );
           }
 

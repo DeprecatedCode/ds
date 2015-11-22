@@ -6,7 +6,7 @@
 
 # a is still undefined
 'Does variable a exist on this scope? ' (
-  'a' @exists {@true ? 'Yes', @false ? 'No'}
+  'a' @exists {true ? 'Yes', false ? 'No'}
 ) '!' @console.log
 
 {@ @it.toUpperCase '...' @console.log} [
@@ -16,5 +16,3 @@
 ]
 
 'Liftoff!' @console.log
-
-@false @console.log

@@ -1,14 +1,14 @@
 @test 'merge logic' {
 
   @test 'can apply logic block to current scope' {
-    'x' @exists @expect @false
-    'y' @exists @expect @false
+    'x' @exists @expect false
+    'y' @exists @expect false
 
     &{x: 5}
     {y: 6}&
 
-    'x' @exists @expect @true
-    'y' @exists @expect @true
+    'x' @exists @expect true
+    'y' @exists @expect true
 
     x @expect 5
     y @expect 6
@@ -18,14 +18,14 @@
     setup: {foo: 5}
     init: {bar: 6}
 
-    'foo' @exists @expect @false
-    'bar' @exists @expect @false
+    'foo' @exists @expect false
+    'bar' @exists @expect false
 
     &setup
     init&
 
-    'foo' @exists @expect @true
-    'bar' @exists @expect @true
+    'foo' @exists @expect true
+    'bar' @exists @expect true
     foo @expect 5
     bar @expect 6
   }
@@ -78,6 +78,6 @@
 @test 'merge (&) scope' {
 
   @test 'can merge ' {
-    @false @expect @true
+    false @expect true
   }
 }
