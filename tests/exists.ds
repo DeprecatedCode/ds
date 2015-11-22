@@ -2,34 +2,34 @@
 
   @test 'correctly reports non-existing variable names' {
     'foo' @exists @expect false
-    qwerty: undefined
+    qwerty: undef
     'qwerty' @exists @expect false
   }
 
   @test 'correctly reports existing variable names' {
-    bar: null
+    bar: nil
     'bar' @exists @expect true
     lamp: 0
     'lamp' @exists @expect true
   }
 
   @test 'correctly reports variables existing in parent scope' {
-    bat: null
+    bat: nil
     @{'bat' @exists} @expect true
   }
 
   @test 'correctly identifies variables in higher scopes' {
-    bat: null
+    bat: nil
     @{@{'bat' @exists}} @expect true
   }
 
   @test 'correctly identifies variables in current and created scope' {
-    parent: null,
+    parent: nil,
 
     getLogic: {
-      created: null
+      created: nil
       {&
-        internal: null
+        internal: nil
         @exists [
           'parent', 'created', 'internal', 'invoked', 'none'
         ]
@@ -37,7 +37,7 @@
     }
 
     check: @ getLogic
-    result: {invoked: null} check
+    result: {invoked: nil} check
 
     0 result @expect true
     1 result @expect true

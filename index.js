@@ -28,10 +28,10 @@ var $logic$ = function (fn) {
 };
 
 var literals = {
-  'true':       true,
-  'false':      false,
-  'null':       null,
-  'undefined':  undefined,
+  'true':   true,
+  'false':  false,
+  'nil':    null,
+  'undef':  undefined,
 };
 
  /**
@@ -484,16 +484,18 @@ var ds = {
     };
 
     if (combinedOperator.value[combinedOperator.value.length - 1] === '-') {
+      if (combinedOperator.value.length > 1 || typeof left !== 'number') {
         combinedOperator.value = combinedOperator.value.substr(0,
                                  combinedOperator.value.length - 1);
-      if (typeof right !== 'number') {
-        throw ds.errorMessage(new TypeError('Cannot negate a non-numeric value'), step);
-      }
+        if (typeof right !== 'number') {
+          throw ds.errorMessage(new TypeError('Cannot negate a non-numeric value'), step);
+        }
 
-      right = -1 * right;
+        right = -1 * right;
 
-      if (combinedOperator.value.length === 0) {
-        return ds.combine(left, right, scope, originalScope, step);
+        if (combinedOperator.value.length === 0) {
+          return ds.combine(left, right, scope, originalScope, step);
+        }
       }
     }
 
