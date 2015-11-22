@@ -1,4 +1,4 @@
-@test 'logic blocks' {
+@test 'logic blocks ({...})' {
 
   @test 'can set and read variables' {
     a: 5

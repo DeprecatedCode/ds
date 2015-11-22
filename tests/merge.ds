@@ -1,0 +1,83 @@
+@test 'merge logic' {
+
+  @test 'can apply logic block to current scope' {
+    'x' @exists @expect @false
+    'y' @exists @expect @false
+
+    &{x: 5}
+    {y: 6}&
+
+    'x' @exists @expect @true
+    'y' @exists @expect @true
+
+    x @expect 5
+    y @expect 6
+  }
+
+  @test 'can apply named logic block to current scope' {
+    setup: {foo: 5}
+    init: {bar: 6}
+
+    'foo' @exists @expect @false
+    'bar' @exists @expect @false
+
+    &setup
+    init&
+
+    'foo' @exists @expect @true
+    'bar' @exists @expect @true
+    foo @expect 5
+    bar @expect 6
+  }
+
+  @test 'can apply incoming logic argument to logic scope' {
+    arg: {a: 5}
+    arg {&, a} @expect 5
+  }
+}
+
+@test 'merge (&) array' {
+
+  @test 'can merge array into larger array' {
+    result: [1, 2, 3] {[9, 8, &, 7, 6]}
+    result.length @expect 7
+    0 result @expect 9
+    1 result @expect 8
+    2 result @expect 1
+    3 result @expect 2
+    4 result @expect 3
+    5 result @expect 7
+    6 result @expect 6
+  }
+
+  @test 'can merge named array into larger array' {
+    arr: [1, 2, 3]
+    result: [9, 8, &arr, 7, 6]
+    result.length @expect 7
+    0 result @expect 9
+    1 result @expect 8
+    2 result @expect 1
+    3 result @expect 2
+    4 result @expect 3
+    5 result @expect 7
+    6 result @expect 6
+  }
+
+  @test 'can merge named logic block into larger array' {
+    arr: {[1, 2, 3]}
+    result: [9, 8, &arr, 7, 6]
+    result.length @expect 5
+    0 result @expect 9
+    1 result @expect 8
+    2 result @expect [1, 2, 3]
+    3 result @expect 7
+    4 result @expect 6
+  }
+}
+
+@test 'merge (&) scope' {
+
+  @test 'can merge ' {
+    @false @expect @true
+  }
+}

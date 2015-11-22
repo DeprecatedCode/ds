@@ -1,0 +1,18 @@
+@test 'arrays ([...])' {
+
+  @test 'can be built and read from' {
+    arr: [1, 2, 3]
+    arr.length @expect 3
+    0 arr @expect 1
+    1 arr @expect 2
+    2 arr @expect 3
+  }
+
+  @test 'can be passed to logic' {
+    arr: [3, 2] {[1, 1 @it, 0 @it]}
+    arr.length @expect 3
+    0 arr @expect 1
+    1 arr @expect 2
+    2 arr @expect 3
+  }
+}
