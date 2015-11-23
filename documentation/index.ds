@@ -1,5 +1,6 @@
-'Hello' @console.log
+@elem: @document.createElement
+@text: @document.createTextNode
 
-header: 'h1' @document.createElement
-'Hello World' @document.createTextNode header.appendChild
+header: 'h1' @elem
+'Hello World' @text header.appendChild
 header @document.body.appendChild
