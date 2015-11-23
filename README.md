@@ -7,19 +7,26 @@ Clone this repo, then run `node . examples/index.ds` from this folder. Paths are
 
 ## Syntax
 
+### Comments
+
+`# comment` is a line comment.
+
 ### Blocks
 
 `{ ... }` represents deferred logic.
 
-`( ... )` represents grouping.
+`( ... )` represents grouped logic.
 
 `[ ... ]` represents an array.
 
 `' ... '` represents a string.
 
-### Symbols
+### Names
 
-All words represent symbol names.
+All plain words [$@\_a-zA-Z0-9]+ represent symbol names.
+
+There are 4 reserved names: `true`, `false`, `nil`, and `undef`.
+These values cannot be overridden in a scope.
 
 ### Operators
 
