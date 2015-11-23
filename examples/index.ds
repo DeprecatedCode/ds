@@ -9,7 +9,7 @@
   'a' @exists {true ? 'Yes', false ? 'No'}
 ) '!' @console.log
 
-{@ @it.toUpperCase '...' @console.log} [
+{nil @it.toUpperCase '...' @console.log} [
   'Three'
   'Two'
   'One'

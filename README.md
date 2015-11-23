@@ -3,7 +3,7 @@ Default Script
 
 ## Quickstart
 
-Clone this repo, then run `node . index.ds` from this folder. Paths are resolved relatively and absolutely as desired. It is also possible to use `node ds .` from a project where you have installed ds as a node module.
+Clone this repo, then run `node . examples/index.ds` from this folder. Paths are resolved relatively and absolutely as desired. It is also possible to use `node ds .` from a project where you have installed ds as a node module.
 
 ## Syntax
 

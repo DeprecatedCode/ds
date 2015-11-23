@@ -1,4 +1,4 @@
-@test 'merge logic' {
+@test 'merge (&) logic' {
 
   @test 'can apply logic block to current scope' {
     'x' @exists @expect false

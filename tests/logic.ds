@@ -35,7 +35,7 @@
 
     @test 'another logic block' {
       {x: 3} {x: 100, &, y: 6, x + y} @expect 9
-      {x + 9} {x: 1, 5 + (@ @it)} @expect 15
+      {x + 9} {x: 1, 5 + (nil @it)} @expect 15
     }
 
     @test 'a string' {
@@ -43,7 +43,7 @@
     }
 
     @test 'a built-in function' {
-      @Math.max {@Math @args [25, 50] @it} @expect 50
+      @Math.max {@args [25, 50] @it} @expect 50
     }
   }
 }

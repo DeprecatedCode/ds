@@ -1,0 +1,9 @@
+'DefaultScript Help'              @console.log
+'Usage: node ds path/to/file.ds'  @console.log
+'Dev: node . examples/*.ds'       @console.log
+'All injectables:'                @console.log
+
+# Object.keys(ds.global).map(function (x) {
+#     return '@' + x;
+#   }).join(', '));
+# };

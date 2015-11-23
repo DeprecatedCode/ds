@@ -1,0 +1,72 @@
+# Simple HTTP server in DefaultScript
+# @author Nate Ferrero
+# @author http://ericsowell.com/blog/2011/5/6/serving-static-files-from-node-js
+
+http: 'http'  @require
+fs:   'fs'    @require
+path: 'path'  @require
+
+PORT: 9999
+
+methodNotAllowed: {
+  405 response.writeHead,
+  nil response.end
+}
+
+serverError: {
+  500 response.writeHead,
+  nil response.end
+}
+
+notFound: {
+  404 response.writeHead,
+  @args ['Not Found', 'utf-8'] response.end
+}
+
+ok: {
+  @args [200, @{'Content-Type': contentType}] response.writeHead
+  @args [content, 'utf-8']                    response.end
+}
+
+PORT (
+  http.createServer @with (
+    @named ['request', 'response'] {
+      'request ' request.method ' ' request.url @console.log
+
+      request.method = 'GET' {
+        ? (
+          filePath: '.' request.url
+
+          &(filePath {
+            './' ? {:filePath 'index.html'}
+          })
+
+          extname: filePath path.extname
+          contentType: extname {
+            '.ds'   ? 'text/defaultscript'
+            '.js'   ? 'text/javascript'
+            '.css'  ? 'text/css'
+            @default  'text/html'
+          }
+
+          fs.exists @with [filePath, {
+            @it {
+              ? fs.readFile @with [filePath, @named ['error', 'content'] {
+                error @exists {
+                  ? &serverError
+                 !? &ok
+                }
+              }]
+
+              !? &notFound
+            }
+          }]
+        )
+
+        !? &methodNotAllowed
+      }
+    }
+  )
+).listen
+
+'Server running at http://127.0.0.1:' PORT '/' @console.log

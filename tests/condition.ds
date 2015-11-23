@@ -1,0 +1,36 @@
+@test 'condition (?) operator' {
+
+  @test 'correctly resolves true with true condition' {
+    a: true {? 5}
+    'a' @exists @expect true
+    a @expect 5
+  }
+
+  @test 'correctly resolves false with true condition' {
+    a: false {? 5}
+    'a' @exists @expect false
+  }
+
+  @test 'correctly resolves true with false condition' {
+    a: true {!? 5}
+    'a' @exists @expect false
+  }
+
+  @test 'correctly resolves false with false condition' {
+    a: false {!? 5}
+    'a' @exists @expect true
+    a @expect 5
+  }
+
+  @test 'correctly resolves true with true and false condition' {
+    a: true {? 10, !? 5}
+    'a' @exists @expect true
+    a @expect 10
+  }
+
+  @test 'correctly resolves false with true and false condition' {
+    a: false {? 10, !? 5}
+    'a' @exists @expect true
+    a @expect 5
+  }
+}

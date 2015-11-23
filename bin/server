@@ -1,0 +1,11 @@
+#!/bin/sh
+while true; do
+  which inotifywait || sudo apt-get install -yq inotify-tools
+  clear
+  echo "(server) Automatically runs DefaultScript server when files change"
+  node . lib/server &
+  PID=$!
+  echo '(server) Waiting for changes'
+  inotifywait -r -e modify -e create -e delete -e move index.js lib 2>/dev/null
+  kill $PID
+done
