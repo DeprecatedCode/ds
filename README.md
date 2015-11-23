@@ -52,6 +52,6 @@ These values cannot be overridden in a scope.
 
 `@` represents named injection.
 
-`<, <=, =, !=, >=, >` represents comparison. `@TODO`
+`<, <=, =, !=, >=, >` represents comparison.
 
 `&&, !!, ||, <>, ><, ~~, !` represents boolean logic (AND, NAND, OR, NOR, XOR, NXOR, NOT). `@TODO`
