@@ -108,6 +108,22 @@
           return fn.apply(null, args);
         });
       },
+      trap: function (fn) {
+        if (typeof fn !== 'function') {
+          throw new Error('@trap must be followed by a logic block');
+        }
+        return $trap$(function (value, scope) {
+          if (fn.$logic$) {
+            var newScope = ds.scope(scope);
+            newScope[IT] = value;
+            return fn(newScope);
+          }
+
+          else {
+            return fn(value);
+          }
+        });
+      },
       test: $trap$(function (description, scope) {
         if (typeof description !== 'string') {
           throw new Error('@test must be preceded by a string');
