@@ -1,10 +1,13 @@
-@elem: @document.createElement
-@text: {
-  elem: @it
-  {@it @document.createTextNode elem.appendChild} @trap
+elem: @trap {
+  @it @document.createElement
 }
 
-'h1' @elem {
-  @it @text 'Hello World'
+text: {
+  elem: @it
+  @trap {@it @document.createTextNode elem.appendChild}
+}
+
+elem 'h1' {
+  @it text 'Hello World'
   @it @document.body.appendChild
 }

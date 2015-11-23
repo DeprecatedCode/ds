@@ -108,7 +108,7 @@
           return fn.apply(null, args);
         });
       },
-      trap: function (fn) {
+      trap: $trap$(function (fn, originalScope) {
         if (typeof fn !== 'function') {
           throw new Error('@trap must be followed by a logic block');
         }
@@ -116,14 +116,14 @@
           if (fn.$logic$) {
             var newScope = ds.scope(scope);
             newScope[IT] = value;
-            return fn(newScope);
+            return fn(newScope, originalScope);
           }
 
           else {
             return fn(value);
           }
         });
-      },
+      }),
       test: $trap$(function (description, scope) {
         if (typeof description !== 'string') {
           throw new Error('@test must be preceded by a string');
