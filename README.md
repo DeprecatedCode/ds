@@ -23,7 +23,7 @@ Clone this repo, then run `node . examples/index.ds` from this folder. Paths are
 
 ### Names
 
-All plain words [$@\_a-zA-Z0-9]+ represent symbol names.
+All plain words `[$@\_a-zA-Z0-9]+` represent symbol names.
 
 There are 4 reserved names: `true`, `false`, `nil`, and `undef`.
 These values cannot be overridden in a scope.
