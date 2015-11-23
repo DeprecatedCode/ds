@@ -477,7 +477,10 @@
       if (typeof scope[name] !== 'undefined') {
         return true;
       }
-      return originalScope && typeof originalScope[name] !== 'undefined';
+      if (!originalScope) {
+        return false;
+      }
+      return typeof originalScope[name] !== 'undefined';
     }),
 
     extension: '.ds',
