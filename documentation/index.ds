@@ -1,3 +1,5 @@
 'Hello' @console.log
 
-'Hello World' @document.write
+header: 'h1' @document.createElement
+'Hello World' @document.createTextNode header.appendChild
+header @document.body.appendChild
