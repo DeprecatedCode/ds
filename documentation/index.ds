@@ -4,7 +4,9 @@ elem: @trap {
 
 text: {
   elem: @it
-  @trap {@it @document.createTextNode elem.appendChild}
+  @trap {
+    @it @document.createTextNode elem.appendChild
+  }
 }
 
 elem 'h1' {

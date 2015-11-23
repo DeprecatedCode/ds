@@ -112,11 +112,12 @@
         if (typeof fn !== 'function') {
           throw new Error('@trap must be followed by a logic block');
         }
-        return $trap$(function (value, scope) {
+
+        return $trap$(function (value/*, scope*/) {
           if (fn.$logic$) {
-            var newScope = ds.scope(scope);
+            var newScope = ds.scope(originalScope);
             newScope[IT] = value;
-            return fn(newScope, originalScope);
+            return fn(newScope);
           }
 
           else {
