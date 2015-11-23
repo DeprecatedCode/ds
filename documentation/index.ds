@@ -1,6 +1,10 @@
 @elem: @document.createElement
-@text: @document.createTextNode
+@text: {
+  text: @it
+  {text @document.createTextNode @it.appendChild}
+}
 
-header: 'h1' @elem
-'Hello World' @text header.appendChild
-header @document.body.appendChild
+'h1' @elem {
+  @it ('Hello World' @text)
+  @it @document.body.appendChild
+}
