@@ -1,6 +1,5 @@
 #!/bin/sh
 while true; do
-  which inotifywait || sudo apt-get install -yq inotify-tools
   clear
   echo "(server) Automatically runs DefaultScript server when files change"
   node . lib/server &
