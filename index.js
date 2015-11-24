@@ -31,9 +31,20 @@
     return fn;
   };
 
+  var $bust$ = function (fn) {
+    fn.$bust$ = true;
+    return fn;
+  };
+
   var $logic$ = function (fn) {
     fn.$logic$ = true;
     return fn;
+  };
+
+  var $context$ = function (contextScope, logic) {
+    return $logic$(function applyContext(scope, originalScope) {
+      return logic(contextScope, scope, true);
+    });
   };
 
   var literals = {
@@ -72,10 +83,39 @@
           return fn.apply(null, args);
         });
       }),
+      class: $trap$(function (cls, classCreatedScope) {
+        if (typeof cls !== 'function' || !cls.$logic$) {
+          throw new Error('@class must be followed by a logic block');
+        }
+
+        var classScope = ds.scope(classCreatedScope);
+        cls(classScope);
+
+        return $trap$(function (instance, instanceCreatedScope) {
+          if (typeof instance !== 'function' || !instance.$logic$) {
+            throw new Error('@class {...} must be followed by a logic block');
+          }
+          var instanceScope = ds.scope(classScope);
+          return instance(instanceScope, instanceCreatedScope);
+        });
+      }),
       default: $trap$(function (value, scope) {
         if (typeof scope.$state$.lastValue !== 'undefined') {
           return scope.$state$.lastValue;
         }
+        return value;
+      }),
+      expect: $logic$(function (scope, originalScope) {
+        var value = scope[IT];
+        return $trap$(function (expected) {
+          scope.$expectations$.push([value, expected]);
+        });
+      }),
+      get: $trap$(function (value, scope) {
+        if (typeof value !== 'function' || !value.$logic$) {
+          throw new Error('@get must be followed by a logic block');
+        }
+        value.$get$ = true;
         return value;
       }),
       named: $trap$(function (names, scope) {
@@ -100,34 +140,9 @@
           };
         });
       }),
-      with: function (fn) {
-        return $trap$(function (args) {
-          if (!Array.isArray(args)) {
-            args = [args];
-          }
-          return fn.apply(null, args);
-        });
-      },
-      trap: $trap$(function (fn, originalScope) {
-        if (typeof fn !== 'function') {
-          throw new Error('@trap must be followed by a logic block');
-        }
-
-        return $trap$(function (value/*, scope*/) {
-          if (fn.$logic$) {
-            var newScope = ds.scope(originalScope);
-            newScope[IT] = value;
-            return fn(newScope);
-          }
-
-          else {
-            return fn(value);
-          }
-        });
-      }),
       test: $trap$(function (description, scope) {
         if (typeof description !== 'string') {
-          throw new Error('@test must be preceded by a string');
+          throw new Error('@test must be followed by a string');
         }
 
         var testScope = ds.scope(scope);
@@ -164,17 +179,44 @@
           });
         });
       }),
-      expect: $logic$(function (scope, originalScope) {
-        var value = scope[IT];
-        return $trap$(function (expected) {
-          scope.$expectations$.push([value, expected]);
+      trap: $trap$(function (fn, originalScope) {
+        if (typeof fn !== 'function') {
+          throw new Error('@trap must be followed by a logic block');
+        }
+
+        return $trap$(function (value/*, scope*/) {
+          if (fn.$logic$) {
+            var newScope = ds.scope(originalScope);
+            newScope[IT] = value;
+            return fn(newScope);
+          }
+
+          else {
+            return fn(value);
+          }
         });
-      })
+      }),
+      with: function (fn) {
+        return $trap$(function (args) {
+          if (!Array.isArray(args)) {
+            args = [args];
+          }
+          return fn.apply(null, args);
+        });
+      }
     },
 
     apply: function (logic, createdScope) {
-      return $logic$(function applyScope(scope, originalScope) {
-        var secondaryScope = createdScope;
+      return $logic$(function applyScope(scope, originalScope, priority) {
+        var secondaryScope;
+
+        if (priority || !createdScope) {
+          secondaryScope = originalScope;
+        }
+
+        else {
+          secondaryScope = createdScope;
+        }
 
         if (!scope || !scope.$state$) {
           var it = scope;
@@ -188,7 +230,7 @@
         }
 
         logic.items.forEach(function (step) {
-          ds.execute(step, scope, secondaryScope || originalScope);
+          ds.execute(step, scope, secondaryScope);
         });
 
         if (scope.$state$.return) {
@@ -217,8 +259,12 @@
 
       else if (typeof first === 'function') {
         if (first.$trap$) {
+          if (typeof second === 'function' && second.$bust$) {
+            return second(first, scope);
+          }
           return first(second, scope);
         }
+
         if (first.$logic$) {
           if (typeof second === 'function' && second.$logic$) {
             var newScope = ds.scope(scope);
@@ -231,15 +277,7 @@
           }
 
           else if (typeof second === 'function') {
-            return second(function (it) {
-              var newScope = ds.scope(scope);
-
-              if (typeof it !== 'undefined' && it !== ds.empty) {
-                newScope[IT] = it;
-              }
-
-              return first(newScope);
-            });
+            return second(first);
           }
 
           else if (Array.isArray(second)) {
@@ -353,6 +391,7 @@
       }
 
       var resolve = scope.$state$.resolve;
+      var needsResolve = resolve.length > 0;
 
       var nameExpected = resolve.length === 0 || (
         resolve[resolve.length - 1].type === OPERATOR &&
@@ -399,6 +438,7 @@
         if (scope[IT] !== scope.$state$.value) {
           scope.$state$.conditionFailure = true;
         }
+        scope.$state$.return = true;
         scope.$state$.value = ds.empty;
         return;
       }
@@ -443,7 +483,10 @@
         }
 
         if (scope.$state$.key !== ds.empty) {
-          scope[scope.$state$.key] = scope.$state$.value;
+          if (scope.$state$.value !== ds.empty) {
+            scope[scope.$state$.key] = scope.$state$.value;
+          }
+
           scope.$state$.key = ds.empty;
           scope.$state$.value = ds.empty;
           scope.$state$.return = false;
@@ -457,11 +500,8 @@
           scope.$state$.return = false;
         }
 
-        else {
+        else if (scope.$state$.value !== ds.empty) {
           scope.$state$.return = true;
-        }
-
-        if (scope.$state$.value !== ds.empty) {
           scope.$state$.lastValue = scope.$state$.value;
         }
 
@@ -474,7 +514,8 @@
 
     exists: $logic$(function (scope, originalScope) {
       var name = scope[IT];
-      if (typeof scope[name] !== 'undefined') {
+      var parentScope = Object.getPrototypeOf(scope);
+      if (parentScope && typeof parentScope[name] !== 'undefined') {
         return true;
       }
       if (!originalScope) {
@@ -536,7 +577,7 @@
 
     merge: function (scope, originalScope, value, step) {
       if (typeof value === 'function' && value.$logic$) {
-        value(scope, originalScope);
+        return value(scope, originalScope);
       }
 
       else if (Array.isArray(value)) {
@@ -598,15 +639,7 @@
       }
 
       else if (combinedOperator.value === '&') {
-        if (left && left !== ds.empty && !(right && right !== ds.empty)) {
-          ds.merge(scope, originalScope, left, step);
-        }
-
-        else if (right && right !== ds.empty) {
-          ds.merge(scope, originalScope, right, step);
-        }
-
-        else {
+        if ((!left || left === ds.empty) && (!right || right === ds.empty)) {
           var value = scope[IT];
           if (typeof value === 'undefined') {
             throw ds.errorMessage(
@@ -614,9 +647,24 @@
             );
           }
           ds.merge(scope, originalScope, value, step);
+          return ds.empty;
         }
 
-        return ds.empty;
+        var value;
+
+        if (left && left !== ds.empty) {
+          value = ds.merge(scope, originalScope, left, step);
+        }
+
+        if (right && right !== ds.empty) {
+          value = ds.merge(scope, originalScope, right, step);
+        }
+
+        if (scope.$state$ && Array.isArray(scope.$state$.accumulate)) {
+          return ds.empty;
+        }
+
+        return value;
       }
 
       else if (combinedOperator.value === '!=') {
@@ -957,24 +1005,44 @@
 
           else {
             if (value === null) {
-              throw ds.errorMessage(new TypeError('Cannot read property of @Null:'), step);
+              throw ds.errorMessage(new TypeError('Cannot read property of nil:'), step);
             }
 
             else if (typeof value === 'undefined') {
               throw ds.errorMessage(
-                new TypeError('Cannot read property of undefined:'), step
+                new TypeError('Cannot read property of undef:'), step
               );
             }
 
             var lastValue = value;
             value = value[step.value];
 
+            if (value && value.$get$) {
+              if (lastValue && lastValue.$state$) {
+                value = value(lastValue, scope);
+              }
+
+              else {
+                value = value(scope, originalScope);
+              }
+            }
+
             if (lastValue === scope && originalScope && typeof value === 'undefined') {
               value = originalScope[step.value];
             }
 
-            if (typeof value === 'function' && !value.$logic$ && !value.$trap$) {
-              value = value.bind(lastValue);
+            if (typeof value === 'function') {
+              if (value.$trap$) {
+                ;
+              }
+              else if (value.$logic$) {
+                if (lastValue !== scope && lastValue.$state$) {
+                  value = $context$(lastValue, value);
+                }
+              }
+              else {
+                value = value.bind(lastValue);
+              }
             }
 
             if (typeof value === 'undefined') {
@@ -999,6 +1067,7 @@
         value: {
           key: ds.empty,
           value: ds.empty,
+          return: false,
           operator: [],
           resolve: []
         },
@@ -1029,9 +1098,27 @@
     },
 
     type: function (thing) {
+      if (typeof thing === 'undefined') {
+        return 'undef';
+      }
+
+      if (thing === null) {
+        return 'nil';
+      }
+
+      if (typeof thing === 'object' && thing.$state$) {
+        return 'scope';
+      }
+
+      if (typeof thing === 'function' &&
+        (thing.$logic$ || thing.$trap$)) {
+        return 'logic';
+      }
+
       if (Array.isArray(thing)) {
         return 'array';
       }
+
       return typeof thing;
     }
   };
@@ -1040,6 +1127,7 @@
     'exists',
     'type'
   ].forEach(function (key) {
+    $bust$(ds[key]);
     ds.global[key] = ds[key];
   });
 

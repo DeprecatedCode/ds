@@ -11,7 +11,7 @@ x: {b: 2}
 
 '2: Is b defined? ' ('b' @exists)                     L
 
-&x  # Invoke x within current scope
+& x  # Invoke x within current scope
 
 '3: What is b now? ' b                                L
 '4: What type is b? ' (b @type)                       L
@@ -33,7 +33,7 @@ add: {&, a + b}  # Create a function which accepts arguments
   {b: 90} + {a: 9} add
 )                                                     L
 
-object: @{key: 'value', child: @{data: [1, 2, 3]}}
+object: @ {key: 'value', child: @ {data: [1, 2, 3]}}
 
 '10: Create an object with key and value: ' (
   object @JSON.stringify
@@ -43,16 +43,16 @@ object: @{key: 'value', child: @{data: [1, 2, 3]}}
   object @type
 )                                                     L
 
-new: @{&object, key: 'other'}
+new: @ {& object, key: 'other'}
 
 '11: Create a new object based on object: ' (
   new @JSON.stringify
 )                                                     L
 
 '12: Use convenience (key: key) assignment: ' (
-  @{:a, :b} @JSON.stringify
+  @ {:a, :b} @JSON.stringify
 )                                                     L
 
 '13: Use convenience expressions: ' (
-  @{:a + 2, :b * 10} @JSON.stringify
+  @ {:a + 2, :b * 10} @JSON.stringify
 )                                                     L

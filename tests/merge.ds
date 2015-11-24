@@ -4,8 +4,8 @@
     'x' @exists @expect false
     'y' @exists @expect false
 
-    &{x: 5}
-    {y: 6}&
+    & {x: 5}
+    {y: 6} &
 
     'x' @exists @expect true
     'y' @exists @expect true
@@ -21,8 +21,8 @@
     'foo' @exists @expect false
     'bar' @exists @expect false
 
-    &setup
-    init&
+    & setup
+    init &
 
     'foo' @exists @expect true
     'bar' @exists @expect true
@@ -52,7 +52,7 @@
 
   @test 'can merge named array into larger array' {
     arr: [1, 2, 3]
-    result: [9, 8, &arr, 7, 6]
+    result: [9, 8, & arr, 7, 6]
     result.length @expect 7
     0 result @expect 9
     1 result @expect 8
@@ -65,7 +65,7 @@
 
   @test 'can merge named logic block into larger array' {
     arr: {[1, 2, 3]}
-    result: [9, 8, &arr, 7, 6]
+    result: [9, 8, & arr, 7, 6]
     result.length @expect 5
     0 result @expect 9
     1 result @expect 8

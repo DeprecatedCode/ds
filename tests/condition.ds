@@ -34,3 +34,42 @@
     a @expect 5
   }
 }
+
+@test 'condition (?) operator with key' {
+
+  @test 'correctly resolves true with true condition' {
+    a: true {x: nil, x: ? 5, x}
+    'a' @exists @expect true
+    a @expect 5
+  }
+
+  @test 'correctly resolves false with true condition' {
+    a: false {x: nil, x: ? 5, x}
+    'a' @exists @expect true
+    a @expect nil
+  }
+
+  @test 'correctly resolves true with false condition' {
+    a: true {x: nil, x: !? 5, x}
+    'a' @exists @expect true
+    a @expect nil
+  }
+
+  @test 'correctly resolves false with false condition' {
+    a: false {x: nil, x: !? 5, x}
+    'a' @exists @expect true
+    a @expect 5
+  }
+
+  @test 'correctly resolves true with true and false condition' {
+    a: true {x: nil, x: ? 10, x: !? 5, x}
+    'a' @exists @expect true
+    a @expect 10
+  }
+
+  @test 'correctly resolves false with true and false condition' {
+    a: false {x: nil, x: ? 10, x: !? 5, x}
+    'a' @exists @expect true
+    a @expect 5
+  }
+}

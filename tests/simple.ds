@@ -1,0 +1,142 @@
+@test 'assignment' {
+  a: 1
+  a @expect 1
+}
+
+@test 'convenience' {
+  a: 1
+  :a + 1
+  a @expect 2
+  @ {:a, a + 1} @expect 3
+  @ {:a + 1, a} @expect 3
+  a @expect 2
+
+  b: 'Hello'
+  :b ' '
+  :b 'World'
+  b @expect 'Hello World'
+}
+
+@test '@' {
+  @ {1} @expect 1
+  (@ {a: 1}).a @expect 1
+}
+
+@test '&' {
+  b: {c: 3, a}
+  @ {a: 2, & b + 1} @expect 3
+  @ {a: 2, c: 4, & b, c} @expect 3
+}
+
+@test '?' {
+  1 {1 ? 'One', 2 ? 'Two'} @expect 'One'
+  true  {? 'Yes', !? 'No'} @expect 'Yes'
+  false {? 'Yes', !? 'No'} @expect 'No'
+}
+
+@test '@args' {
+  @args [1, 2, 3] @Math.max @expect 3
+}
+
+@test '@class' {
+  Animal: @class {
+    prefix: 'The '
+    makeNoise: {name ' goes ' @it}
+  }
+
+  cat: Animal {name: prefix 'cat'}
+  'prrr' cat.makeNoise @expect 'The cat goes prrr'
+  'meow' cat.makeNoise @expect 'The cat goes meow'
+
+  dog: Animal {name: prefix 'dog'}
+  'woof' dog.makeNoise @expect 'The dog goes woof'
+}
+
+@test '@default' {
+  @ {@default 1} @expect 1
+  @ {2, @default 1} @expect 2
+}
+
+@test '@deferred' {
+  name: @deferred
+
+  name.promise {
+    then {
+      @it @expect 'Debbie'
+    }
+  }
+
+  'Debbie' name.resolve
+}
+
+@test '@exists' {
+  'a' @exists @expect false
+  a: 1
+  'a' @exists @expect true
+}
+
+@test '@expect' {
+  true @expect true
+}
+
+@test '@get' {
+  b: 3
+  a: @get {b - 1}
+  b: 2
+  a @expect 1
+}
+
+@test '@it' {
+  1 {@it + 1} @expect 2
+  {@it + 1} {1 @it} @expect 2
+  @ {'@it' @exists @expect false}
+  1 {'@it' @exists @expect true}
+}
+
+@test '@named' {
+  x: @named ['one', 'two'] {
+    '@it' @exists @expect false
+    one @expect 1
+    'two' @exists @expect false
+  }
+
+  y: @named ['one', 'two'] {
+    '@it' @exists @expect false
+    one @expect 1
+    two @expect 2
+  }
+
+  1 x
+  @args [1, 2] y
+}
+
+@test '@test' {
+  @test 'nested' {
+    true @expect true
+  }
+}
+
+@test '@trap' {
+  x: {
+    @it @expect 1
+  }
+
+  y: @trap {
+    @it @expect 1
+  }
+
+  1 x
+  y 1
+}
+
+@test '@type' {
+  {}        @type @expect 'logic'
+  []        @type @expect 'array'
+  @ {}      @type @expect 'scope'
+  1         @type @expect 'number'
+  true      @type @expect 'boolean'
+  undef     @type @expect 'undef'
+  nil       @type @expect 'nil'
+  @Math     @type @expect 'object'
+  @Math.cos @type @expect 'function'
+}

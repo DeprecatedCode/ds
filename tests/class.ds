@@ -1,0 +1,22 @@
+@test '@class' {
+
+  @test 'can create instance' {
+    Person: @class {
+      mr: 'Mr. '
+      ms: 'Ms. '
+      say: {firstName ' says "' @it '"'}
+      fullName: @get {firstName ' ' lastName}
+    }
+
+    Person @type @expect 'logic'
+
+    bill: Person {
+      firstName: mr 'Bill'
+      lastName: 'Gates'
+    }
+
+    bill @type @expect 'scope'
+    'Hello' bill.say @expect 'Mr. Bill says "Hello"'
+    bill.fullName @expect 'Mr. Bill Gates'
+  }
+}

@@ -24,7 +24,7 @@ notFound: {
 }
 
 ok: {
-  @args [200, @{'Content-Type': contentType}] response.writeHead
+  @args [200, @ {'Content-Type': contentType}] response.writeHead
   @args [content, 'utf-8']                    response.end
 }
 
@@ -37,9 +37,11 @@ PORT (
         ? (
           filePath: '.' request.url
 
-          &(filePath {
-            './' ? {:filePath 'index.html'}
-          })
+          & (
+            filePath {
+              './' ? {:filePath 'index.html'}
+            }
+          )
 
           extname: filePath path.extname
           contentType: extname {
@@ -53,17 +55,17 @@ PORT (
             @it {
               ? fs.readFile @with [filePath, @named ['error', 'content'] {
                 error @exists {
-                  ? &serverError
-                 !? &ok
+                  ? & serverError
+                 !? & ok
                 }
               }]
 
-              !? &notFound
+              !? & notFound
             }
           }]
         )
 
-        !? &methodNotAllowed
+        !? & methodNotAllowed
       }
     }
   )

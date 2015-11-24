@@ -1,30 +1,30 @@
 @test 'logic blocks ({...})' {
 
+  @test 'have the correct type' {
+    {} @type @expect 'logic'
+  }
+
   @test 'can set and read variables' {
     a: 5
     a @expect 5
 
     @test 'inside nested blocks' {
       b: 7
-      @{b} @expect 7
+      @ {b} @expect 7
 
-      @{@{@{@{@{a}}}}} @expect 5
-        @{@{@{@{a}}}} @expect 5
-          @{@{@{a}}} @expect 5
-            @{@{a}} @expect 5
-              @{a} @expect 5
+      @ {@ {@ {@ {@ {a}}}}} @expect 5
+        @ {@ {@ {@ {a}}}} @expect 5
+          @ {@ {@ {a}}} @expect 5
+            @ {@ {a}} @expect 5
+              @ {a} @expect 5
     }
-  }
-
-  @test 'have the correct type' {
-    {} @type @expect 'function'
   }
 
   @test 'are not automatically invoked' {
     x: []
     {1 x.push}
     x.length @expect 0
-    @{1 x.push}
+    @ {1 x.push}
     x.length @expect 1
   }
 

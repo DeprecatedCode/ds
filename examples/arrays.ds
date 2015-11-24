@@ -33,7 +33,7 @@ nonFruit: isFruit (cart exclude)
 
 '6: The cart has a type of: ' (cart @type)                       L
 
-biggerCart: ['lemon', &cart, 'pineapple']
+biggerCart: ['lemon', & cart, 'pineapple']
 
 '7: Create a bigger cart with the old cart in the middle: ' (
   ' - ' biggerCart.join '!'

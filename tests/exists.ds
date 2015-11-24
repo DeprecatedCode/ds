@@ -15,12 +15,12 @@
 
   @test 'correctly reports variables existing in parent scope' {
     bat: nil
-    @{'bat' @exists} @expect true
+    @ {'bat' @exists} @expect true
   }
 
   @test 'correctly identifies variables in higher scopes' {
     bat: nil
-    @{@{'bat' @exists}} @expect true
+    @ {@ {'bat' @exists}} @expect true
   }
 
   @test 'correctly identifies variables in current and created scope' {
