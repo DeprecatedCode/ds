@@ -1,0 +1,71 @@
+world: @ {
+  materials: @ {
+    iron: 2
+    wood: 2
+    meat: 2
+  }
+
+  inventory: @ {
+    pickaxe: 0
+  }
+}
+
+Item: @class {
+  build: {
+    {iron < requires.iron {? notEnoughMaterials}, :iron - requires.iron} world.materials
+    {wood < requires.wood {? notEnoughMaterials}, :wood - requires.wood} world.materials
+    {meat < requires.meat {? notEnoughMaterials}, :meat - requires.meat} world.materials
+    {:pickaxe + 1} world.inventory
+    'You built a ' name ' and now have ' (world.materials @JSON.stringify) @console.log
+  }
+
+  find: {
+    {:pickaxe + 1} world.inventory
+  }
+}
+
+pickaxe: Item {
+  name: 'Pickaxe'
+  key: 'pickaxe'
+  requires: @ {
+    wood: 1
+    iron: 1
+    meat: 0
+  }
+
+  chop: {
+    'Chop chop' @console.log
+    {:meat - 1} world.materials
+    {:wood + 1} world.materials
+  }
+}
+
+logElement: 'div' @document.createElement
+log: {
+  entry: 'div' @document.createElement
+  (@it @document.createTextNode) entry.appendChild
+  entry logElement.appendChild
+}
+
+button: {
+  label: @it
+  @trap {
+    el: 'button' @document.createElement
+    (label @document.createTextNode) el.appendChild
+    el @document.body.appendChild
+    @args ['click', @it] el.addEventListener
+  }
+}
+
+chopButton: 'Chop Wood' button {
+  @ pickaxe.chop
+  world.materials @JSON.stringify log
+}
+
+chopButton: 'Find Pickaxe' button {
+  @ pickaxe.find
+  world.inventory @JSON.stringify log
+
+}
+
+logElement @document.body.appendChild

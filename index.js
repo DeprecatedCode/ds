@@ -280,6 +280,10 @@
             return second(first);
           }
 
+          else if (second && second.$state$) {
+            return first(second, scope);
+          }
+
           else if (Array.isArray(second)) {
             var newScope = ds.scope(scope);
             return second.map(function (item) {
