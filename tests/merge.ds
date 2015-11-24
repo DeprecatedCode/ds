@@ -77,7 +77,13 @@
 
 @test 'merge (&) scope' {
 
-  @test 'can merge ' {
-    false @expect true
+  @test 'can merge scopes' {
+    x: @ {a: 1, b: 2}
+    y: @ {c: 3, d: 4}
+    z: @ {& x, & y}
+    'a' z @expect 1
+    'b' z @expect 2
+    'c' z @expect 3
+    'd' z @expect 4
   }
 }

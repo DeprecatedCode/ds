@@ -331,6 +331,18 @@
       }
 
       else if (typeof first === 'string') {
+        if (second === null) {
+          second = 'nil';
+        }
+
+        if (typeof second === 'undefined') {
+          second = 'undef';
+        }
+
+        if (typeof second === 'object') {
+          return second[first];
+        }
+
         return first + String(second);
       }
 
@@ -650,8 +662,6 @@
           return ds.empty;
         }
 
-        var value;
-
         if (left && left !== ds.empty) {
           value = ds.merge(scope, originalScope, left, step);
         }
@@ -660,11 +670,7 @@
           value = ds.merge(scope, originalScope, right, step);
         }
 
-        if (scope.$state$ && Array.isArray(scope.$state$.accumulate)) {
-          return ds.empty;
-        }
-
-        return value;
+        return ds.empty;
       }
 
       else if (combinedOperator.value === '!=') {
