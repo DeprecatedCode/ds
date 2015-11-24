@@ -1,4 +1,7 @@
 #!/bin/sh
+which inotifywait || echo '(server) Runs DefaultScript server'
+which inotifywait || node . lib/server
+which inotifywait || exit
 while true; do
   clear
   echo "(server) Automatically runs DefaultScript server when files change"
