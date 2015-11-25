@@ -1,6 +1,10 @@
 @test 'assignment' {
   a: 1
   a @expect 1
+  key: 'c'
+  ('ab' key): 'alpha'
+  key @expect 'c'
+  abc @expect 'alpha'
 }
 
 @test 'convenience' {
@@ -15,6 +19,15 @@
   :b ' '
   :b 'World'
   b @expect 'Hello World'
+
+  key: 'c'
+  (key): 1
+  :(key) + 1
+  .(key) @expect 2
+  @ {:(key), .key + 1} @expect 3
+  @ {:(key) + 1, .key} @expect 3
+  c @expect 2
+  .key @expect 2
 }
 
 @test '@' {

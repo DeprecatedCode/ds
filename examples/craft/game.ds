@@ -1,28 +1,15 @@
-world: @ {
-  materials: @ {
-    iron: 2
-    wood: 2
-    meat: 2
-  }
+world: 'lib/world' @import
+Item: 'lib/item' @import @class
 
-  inventory: @ {
-    pickaxe: 0
-  }
-}
+{
+  item: 'lib/items/' @it @import,
+  world.items {@it @console.log, (@it): Item item}
+} [
+  'pickaxe'
+]
 
-Item: @class {
-  build: {
-    {iron < requires.iron {? notEnoughMaterials}, :iron - requires.iron} world.materials
-    {wood < requires.wood {? notEnoughMaterials}, :wood - requires.wood} world.materials
-    {meat < requires.meat {? notEnoughMaterials}, :meat - requires.meat} world.materials
-    {:pickaxe + 1} world.inventory
-    'You built a ' name ' and now have ' (world.materials @JSON.stringify) @console.log
-  }
 
-  find: {
-    {:pickaxe + 1} world.inventory
-  }
-}
+items @console.log
 
 pickaxe: Item {
   name: 'Pickaxe'

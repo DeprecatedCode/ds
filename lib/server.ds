@@ -9,23 +9,68 @@ path: 'path'  @require
 PORT: 9999
 
 methodNotAllowed: {
+  '> HTTP 405 Method Not Allowed' @console.log
   405 response.writeHead,
   nil response.end
 }
 
 serverError: {
+  '> HTTP 500 Server Error' @console.log
   500 response.writeHead,
   nil response.end
 }
 
 notFound: {
+  '> HTTP 404 Not Found' @console.log
   404 response.writeHead,
   @args ['Not Found', 'utf-8'] response.end
 }
 
+redirect: {
+  '> HTTP 302 Redirect ' @it @console.log
+  @args [302, @ {Location: @it}] response.writeHead
+  nil response.end
+}
+
 ok: {
+  '> HTTP 200 OK (' content.length ' bytes)' @console.log
   @args [200, @ {'Content-Type': contentType}] response.writeHead
-  @args [content, 'utf-8']                    response.end
+  @args [content, 'utf-8']                     response.end
+}
+
+serveFile: {
+  filePath: request.url
+
+  & (
+    (filePath.length - 1) filePath = '/' {
+      ? {:filePath 'index.html'}
+    }
+  )
+
+  'read ' filePath @console.log
+
+  &{filePath: '.' filePath}
+
+  extname: filePath path.extname
+  contentType: extname {
+    '.ds'   ? 'text/defaultscript'
+    '.js'   ? 'text/javascript'
+    '.css'  ? 'text/css'
+    @default  'text/html'
+  }
+
+  fs.exists @with [filePath, {
+    @it {
+      ? fs.readFile @with [filePath, @named ['error', 'content'] {
+        error @exists {
+          ? & serverError
+         !? & ok
+        }
+      }]
+
+      !? & notFound
+    }
+  }]
 }
 
 PORT (
@@ -35,34 +80,15 @@ PORT (
 
       request.method = 'GET' {
         ? (
-          filePath: '.' request.url
+          filePath: request.url
 
           & (
-            filePath {
-              './' ? {:filePath 'index.html'}
+            '.' request.url.indexOf != -1 || \
+            ((request.url.length - 1) request.url = '/') {
+              ? & serveFile
+              !? request.url '/' redirect
             }
           )
-
-          extname: filePath path.extname
-          contentType: extname {
-            '.ds'   ? 'text/defaultscript'
-            '.js'   ? 'text/javascript'
-            '.css'  ? 'text/css'
-            @default  'text/html'
-          }
-
-          fs.exists @with [filePath, {
-            @it {
-              ? fs.readFile @with [filePath, @named ['error', 'content'] {
-                error @exists {
-                  ? & serverError
-                 !? & ok
-                }
-              }]
-
-              !? & notFound
-            }
-          }]
         )
 
         !? & methodNotAllowed

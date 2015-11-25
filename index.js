@@ -26,6 +26,28 @@
     ;
   }
 
+  /**
+   * Usage:
+   *  x = $await$();
+   *  x(function () {});
+   *
+   * Later:
+   *  x.done();
+   */
+  var $await$ = function () {
+    var next;
+    var fn = function (_next) {
+      next = _next;
+    };
+    fn.$await$ = true;
+    fn.done = function () {
+      if (typeof next === 'function') {
+        next();
+      }
+    };
+    return fn;
+  };
+
   var $trap$ = function (fn) {
     fn.$trap$ = true;
     return fn;
@@ -52,6 +74,98 @@
     'false':  false,
     'nil':    null,
     'undef':  undefined,
+  };
+
+  var getNamedValue = function (name, value, scope, originalScope, step) {
+    if (name in literals) {
+      value = literals[name];
+    }
+
+    else if (/^\d+$/.test(name)) {
+      if (typeof value === 'number') {
+        value = parseFloat(value + '.' + name);
+      }
+
+      else {
+        value = parseInt(name);
+      }
+    }
+
+    else if (name[0] === '@') {
+      var shortName = name.substr(1);
+
+      if (shortName === '') {
+        value = undefined;
+      }
+
+      else {
+        value = scope[name];
+
+        if (originalScope && typeof value === 'undefined') {
+          value = originalScope[name];
+        }
+
+        if (typeof value === 'undefined') {
+          if (!(shortName in ds.global)) {
+            throw ds.errorMessage(
+              new TypeError('Injectable "' + name + '" not found'), step
+            );
+          }
+          value = ds.global[shortName];
+        }
+      }
+    }
+
+    else {
+      if (value === null) {
+        throw ds.errorMessage(new TypeError('Cannot read property of nil:'), step);
+      }
+
+      else if (typeof value === 'undefined') {
+        throw ds.errorMessage(
+          new TypeError('Cannot read property of undef:'), step
+        );
+      }
+
+      var lastValue = value;
+      value = value[name];
+
+      if (value && value.$get$) {
+        if (lastValue && lastValue.$state$) {
+          value = value(lastValue, scope);
+        }
+
+        else {
+          value = value(scope, originalScope);
+        }
+      }
+
+      if (lastValue === scope && originalScope && typeof value === 'undefined') {
+        value = originalScope[name];
+      }
+
+      if (typeof value === 'function') {
+        if (value.$trap$) {
+          ;
+        }
+        else if (value.$logic$) {
+          if (lastValue !== scope && lastValue.$state$) {
+            value = $context$(lastValue, value);
+          }
+        }
+        else {
+          value = value.bind(lastValue);
+        }
+      }
+
+      if (typeof value === 'undefined') {
+        throw ds.errorMessage(
+          new TypeError(name + ' is not defined'), step
+        );
+      }
+    }
+
+    return value;
   };
 
    /**
@@ -420,10 +534,19 @@
       }
 
       if (step.type === OPERATOR && step.value === '.') {
-        if (nameExpected) {
+        if (resolve.length === 0) {
+          scope.$state$.value = $trap$(function (key, scope) {
+            return getNamedValue(key, scope, scope, originalScope, step);
+          });
+        }
+
+        else if (nameExpected) {
           throw ds.errorMessage(new SyntaxError('Invalid'), step);
         }
-        resolve.push(step);
+
+        else {
+          resolve.push(step);
+        }
         return;
       }
 
@@ -472,9 +595,17 @@
           throw ds.errorMessage(new SyntaxError('Unexpected assigment operator'), step);
         }
 
-        scope.$state$.key = resolve.map(
-          function (x) {return x.value;}
-        ).join('');
+        if (resolve.length === 1 && resolve[0].type === NAME) {
+          scope.$state$.key = resolve.map(
+            function (x) {return x.value;}
+          ).join('');
+        }
+
+        else {
+          collapse();
+          scope.$state$.key = scope.$state$.value;
+        }
+
         scope.$state$.resolve = [];
         scope.$state$.value = ds.empty;
         return;
@@ -571,9 +702,16 @@
         if (name.substr(name.length - 3) !== '.ds') {
           name = name + '.ds';
         }
+
+        var _await_ = $await$();
+
         ds.request(name)(function (script) {
-          ds.parse(script, name)(ds.scope());
+          _await_.done(
+            ds.parse(script, name)(ds.scope())
+          );
         });
+
+        return _await_;
       }
 
       else {
@@ -930,7 +1068,10 @@
         return undefined;
       }
 
+      var lastStep;
       resolve.forEach(function (step) {
+        lastStep = step;
+
         if (step.type === OPERATOR && step.value === '.') {
           if (allowRead) {
             throw ds.errorMessage(new SyntaxError('Invalid'), step);
@@ -944,6 +1085,7 @@
         }
 
         allowRead = false;
+
         if (step.type === STRING) {
           value = step.items.map(function (i) {
             return i.value;
@@ -970,96 +1112,11 @@
 
         else if (step.type === NAME) {
           if (scope.$state$.convenienceKey) {
-            scope.$state$.convenienceKey = false;
-            scope.$state$.key = step.value;
-          }
-
-          if (step.value in literals) {
-            value = literals[step.value];
-          }
-
-          else if (/^\d+$/.test(step.value)) {
-            if (typeof value === 'number') {
-              value = parseFloat(value + '.' + step.value);
-            }
-
-            else {
-              value = parseInt(step.value);
-            }
-          }
-
-          else if (step.value[0] === '@') {
-            var name = step.value.substr(1);
-
-            if (name === '') {
-              value = undefined;
-            }
-
-            else {
-              value = scope[step.value];
-
-              if (originalScope && typeof value === 'undefined') {
-                value = originalScope[step.value];
-              }
-
-              if (typeof value === 'undefined') {
-                if (!(name in ds.global)) {
-                  throw ds.errorMessage(
-                    new TypeError('Injectable "' + step.value + '" not found'), step
-                  );
-                }
-                value = ds.global[name];
-              }
-            }
+            value = step.value;
           }
 
           else {
-            if (value === null) {
-              throw ds.errorMessage(new TypeError('Cannot read property of nil:'), step);
-            }
-
-            else if (typeof value === 'undefined') {
-              throw ds.errorMessage(
-                new TypeError('Cannot read property of undef:'), step
-              );
-            }
-
-            var lastValue = value;
-            value = value[step.value];
-
-            if (value && value.$get$) {
-              if (lastValue && lastValue.$state$) {
-                value = value(lastValue, scope);
-              }
-
-              else {
-                value = value(scope, originalScope);
-              }
-            }
-
-            if (lastValue === scope && originalScope && typeof value === 'undefined') {
-              value = originalScope[step.value];
-            }
-
-            if (typeof value === 'function') {
-              if (value.$trap$) {
-                ;
-              }
-              else if (value.$logic$) {
-                if (lastValue !== scope && lastValue.$state$) {
-                  value = $context$(lastValue, value);
-                }
-              }
-              else {
-                value = value.bind(lastValue);
-              }
-            }
-
-            if (typeof value === 'undefined') {
-              throw ds.errorMessage(
-                new TypeError(step.value + ' is not defined'), step
-              );
-            }
+            value = getNamedValue(step.value, value, scope, originalScope, step);
           }
         }
 
@@ -1067,6 +1124,12 @@
           throw ds.errorMessage(new SyntaxError('Invalid'), step);
         }
       });
+
+      if (scope.$state$.convenienceKey) {
+        scope.$state$.convenienceKey = false;
+        scope.$state$.key = value;
+        value = getNamedValue(scope.$state$.key, scope, scope, originalScope, lastStep);
+      }
 
       return value;
     },
@@ -1140,6 +1203,8 @@
     $bust$(ds[key]);
     ds.global[key] = ds[key];
   });
+
+  ds.global.import = ds.import;
 
   Object.defineProperty(ds.global, 'deferred', {
     get: function () {

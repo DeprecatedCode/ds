@@ -1,0 +1,11 @@
+build: {
+  {iron < requires.iron {? notEnoughMaterials}, :iron - requires.iron} world.materials
+  {wood < requires.wood {? notEnoughMaterials}, :wood - requires.wood} world.materials
+  {meat < requires.meat {? notEnoughMaterials}, :meat - requires.meat} world.materials
+  {:(key) + 1} world.inventory
+  'You built a ' name ' and now have ' (world.materials @JSON.stringify) @console.log
+}
+
+find: {
+  {:(key) + 1} world.inventory
+}
