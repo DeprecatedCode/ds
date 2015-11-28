@@ -66,5 +66,17 @@ DefaultScript.global.format = function (item) {
     return ["'", item, "'"].join('');
   }
 
+  if (type === 'number' ||
+      type === 'boolean' ||
+      type === 'null' ||
+      type === 'undefined') {
+    return String(item);
+  }
+
+  if (type === 'logic') {
+    var name = item.stepName || 'native';
+    return ['{logic ', name, '}'].join('');
+  }
+
   return type;
 };

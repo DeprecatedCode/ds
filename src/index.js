@@ -26,6 +26,22 @@ var DefaultScript = {
 var isBrowser = typeof window === 'object';
 var isNode = typeof global === 'object' && typeof require === 'function';
 
+var resumeCallback = function (result) {
+  return function (next) {
+    if (typeof next !== 'function') {
+      throw new Error('resumeCallback(result)(...) function required');
+    }
+
+    if (typeof result === 'function' && result.$pause$) {
+      result(next);
+    }
+
+    else {
+      next(result);
+    }
+  };
+};
+
 const BREAK    = 0;
 const NAME     = 1;
 const OPERATOR = 2;
@@ -41,3 +57,9 @@ const SOURCE   = 2;
 const IT = '@';
 const EMPTY = {$: 'empty'};
 const EXTENSION = '.ds';
+
+var remember = function (step, stepName, fn) {
+  fn.step = step;
+  fn.stepName = stepName;
+  return fn;
+};

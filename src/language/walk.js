@@ -1,4 +1,4 @@
-DefaultScript.walk = function (source, name, each, done) {
+DefaultScript.walk = function (sourceSteps, sourceName, each, next) {
   var i = 0;
   var paused = false;
   var resume;
@@ -10,31 +10,31 @@ DefaultScript.walk = function (source, name, each, done) {
     }
   };
 
-  var next = function () {
+  var nextStep = function () {
     if (typeof i === 'undefined') {
       i = 0;
     }
 
-    if (i >= source.length) {
-      done(resolve);
+    if (i >= sourceSteps.length) {
+      next(resolve);
     }
 
     else {
-      var handler = each(source[i], name);
+      var handler = each(sourceSteps[i], sourceName);
       i += 1;
 
-      if (typeof handler === 'function') {
-        handler(next);
+      if (typeof handler === 'function' && handler.name === '$pause$') {
+        handler(nextStep);
         paused = true;
       }
 
       else {
-        next();
+        nextStep();
       }
     }
   };
 
-  next();
+  nextStep();
 
   if (!paused) {
     return value;

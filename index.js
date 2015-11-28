@@ -26,6 +26,22 @@ var DefaultScript = {
 var isBrowser = typeof window === 'object';
 var isNode = typeof global === 'object' && typeof require === 'function';
 
+var resumeCallback = function (result) {
+  return function (next) {
+    if (typeof next !== 'function') {
+      throw new Error('resumeCallback(result)(...) function required');
+    }
+
+    if (typeof result === 'function' && result.$pause$) {
+      result(next);
+    }
+
+    else {
+      next(result);
+    }
+  };
+};
+
 const BREAK    = 0;
 const NAME     = 1;
 const OPERATOR = 2;
@@ -41,6 +57,12 @@ const SOURCE   = 2;
 const IT = '@';
 const EMPTY = {$: 'empty'};
 const EXTENSION = '.ds';
+
+var remember = function (step, stepName, fn) {
+  fn.step = step;
+  fn.stepName = stepName;
+  return fn;
+};
 DefaultScript.block = function (type, position) {
   if (type !== GROUP && type !== LOGIC && type !== ARRAY) {
     throw new Error('Invalid block type');
@@ -52,23 +74,19 @@ DefaultScript.block = function (type, position) {
   block.$type$ = 'block';
   return block;
 };
-DefaultScript.error = function (err, step) {
+DefaultScript.error = function (err, step, stepName) {
   var desc;
 
-  if ('value' in step) {
-    desc = '`' + step[VALUE] + '`';
+  if (!step || !stepName) {
+    throw new Error('Invalid use of DefaultScript.error');
+  }
+
+  if (typeof step[SOURCE] === 'string' && step[SOURCE].length > 0) {
+    desc = '`' + step[SOURCE] + '`';
   }
 
   else {
-    desc = [
-      'break',
-      'name',
-      'operator',
-      'group',
-      'logic',
-      'array',
-      'string'
-    ][step[TYPE]];
+    desc = DefaultScript.tokenTypes[step[TYPE]].toLowerCase();
   }
 
   err.stack = [];
@@ -80,7 +98,7 @@ DefaultScript.error = function (err, step) {
 
   return err;
 };
-DefaultScript.expression = function (scopes, step, triggerStepName, expression, done) {
+DefaultScript.expression = function (scopes, step, triggerStepName, expression) {
   var stack = [];
   var left = [];
   var right = [];
@@ -89,23 +107,35 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
 
   return DefaultScript.walk(expression, triggerStepName, function (step, stepName) {
     if (step[TYPE] === BREAK || right.length > 0) {
-      var leftValue;
+      var operate = function (leftValue) {
+
+        return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
+          if (value.stepName === '@expect(actual: number)') {
+            throw new Error(String(_value_));
+          }
+
+          left = [];
+          right = [];
+          operation = [];
+          value = _value_;
+
+          if (step[TYPE] !== BREAK) {
+            right.push(step);
+          }
+        });
+      };
 
       if (left.length > 0) {
         if (value !== EMPTY) {
           throw new Error('Invalid situation');
         }
 
-        leftValue = DefaultScript.resolve(scopes, step, stepName, left);
-        left = [];
+        return DefaultScript.resolve(scopes, step, stepName, left, function (leftValue) {
+          return operate(leftValue);
+        });
       }
 
-      return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
-        left = [];
-        right = [];
-        operation = [];
-        value = _value_;
-      });
+      return operate(value);
     }
 
     else if (step[TYPE] === OPERATOR && step[SOURCE] !== '.') {
@@ -122,29 +152,21 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
   }, function (resolve) {
     resolve(value);
   });
-}
-DefaultScript.get = function (scopes, step, stepName, next) {
+};
+DefaultScript.get = function (scopes, step, stepName) {
   var key = step[SOURCE];
   var value;
 
   for (var i = 0; i < scopes.length; i++) {
     if (key in scopes[i]) {
-      value = scopes[i][key];
-      if (typeof next === 'function') {
-        next(value);
-      }
-      return value;
+      return scopes[i][key];
     }
   }
 
   if (key[0] === '@') {
     var globalKey = key.substr(1);
     if (globalKey in DefaultScript.global) {
-      value = scopes[i][globalKey];
-      if (typeof next === 'function') {
-        next(value);
-      }
-      return value;
+      return DefaultScript.global[globalKey];
     }
   }
 
@@ -173,7 +195,7 @@ if (isNode) {
     var tree = DefaultScript.parse(contents, name);
     var logic = DefaultScript.logic(tree, name);
     var scopes = [DefaultScript.global.scope()];
-    return logic(scopes);
+    return logic(scopes, null, name, EMPTY);
   };
 }
 
@@ -188,7 +210,7 @@ else if (isBrowser) {
         var tree = DefaultScript.parse(contents, name);
         var logic = DefaultScript.logic(tree, name);
         var scopes = [DefaultScript.global.scope()];
-        resume(logic(scopes));
+        resume(logic(scopes, null, name, EMPTY));
       });
     });
   };
@@ -204,7 +226,7 @@ DefaultScript.literals = {
   'undefined':  undefined
 };
 DefaultScript.logic = function (block, name) {
-  return function $logic$(scopes) {
+  return remember(block, name, function $logic$(scopes, step, stepName, value) {
     var stack = [];
     var key = [];
     var expectKey = false;
@@ -222,6 +244,8 @@ DefaultScript.logic = function (block, name) {
         if (expectKey) {
           throw DefaultScript.error(new Error('Key expected'), step);
         }
+
+        stack.push(step);
 
         return DefaultScript.expression(scopes, step, stepName, stack, function (value) {
           stack = [];
@@ -274,10 +298,96 @@ DefaultScript.logic = function (block, name) {
     }, function (resolve) {
       resolve(lastValue !== EMPTY ? lastValue : scopes);
     });
-  };
+  });
 };
-DefaultScript.operate = function (scopes, step, stepName, value, operation, right, resolve) {
-  // value might be a $pause$ function if we are waiting on get
+DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, right) {
+
+  if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
+    return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
+      return leftValue(scopes, step, stepName, rightValue, next);
+    });
+  }
+
+  // DefaultScript.global.log('\n\nOperate:', leftValue, operation, right, '\n\n');
+
+  var leftType = DefaultScript.global.type(leftValue);
+
+  var resolveRight = function (fn) {
+    return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
+      var rightType = DefaultScript.global.type(rightValue);
+      return fn(rightType, rightValue);
+    });
+  }
+
+  if (operation.length === 0) {
+    return resolveRight(function (rightType, rightValue) {
+      console.log('###', leftValue, operation, rightValue)
+      if (rightType === 'logic') {
+        return rightValue(scopes, step, stepName, leftValue, next);
+      }
+
+      else if (rightType === 'function') {
+        try {
+          return rightValue(leftValue);
+        }
+
+        catch (e) {
+          throw new DefaultScript.error(e, step, stepName);
+        }
+      }
+
+      else {
+        var message = 'Invalid combination, ' + leftType + ' and ' + rightType;
+        throw DefaultScript.error(
+          new Error(message), step, stepName
+        );
+      }
+    });
+  }
+
+  else if (operation[operation.length - 1][SOURCE] === '!') {
+    leftValue = !leftValue;
+    operation.pop();
+    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, next);
+  }
+
+  else if (operation.length > 1 && operation[0][SOURCE] === '-') {
+    leftValue = -1 * leftValue;
+    operation.pop();
+    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, next);
+  }
+
+  else {
+    var combinedOperator = operation.map(function (op) {
+      return op[SOURCE];
+    }).join('');
+
+    if (combinedOperator === '+') {
+      return resolveRight(function (rightType, rightValue) {
+        return leftValue + rightValue;
+      });
+    }
+
+    else if (combinedOperator === '-') {
+      return resolveRight(function (rightType, rightValue) {
+        return leftValue - rightValue;
+      });
+    }
+
+    else if (combinedOperator === '*') {
+      return resolveRight(function (rightType, rightValue) {
+        return leftValue * rightValue;
+      });
+    }
+
+    else if (combinedOperator === '/') {
+      return resolveRight(function (rightType, rightValue) {
+        return leftValue / rightValue;
+      });
+    }
+
+    throw new Error('Operation ' + combinedOperator + ' not implemented');
+  }
 };
 DefaultScript.parse = function (source, name) {
   var syntax = DefaultScript.syntax;
@@ -466,38 +576,54 @@ DefaultScript.pause = function (how) {
     done = _done_;
   };
 };
-DefaultScript.resolve = function (scopes, step, triggerStepName, stack, next) {
+DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
   const STATE_DOT = 0;
   const STATE_NAME = 1;
 
-  DefaultScript.global.log('Resolve:', stack);
+  // DefaultScript.global.log('Resolve:', stack);
   var value = EMPTY;
   var state = EMPTY;
 
   return DefaultScript.walk(stack, triggerStepName, function (step, stepName) {
-    if (state === STATE_NAME && step[TYPE] === OPERATOR && step[SOURCE] === '.') {
+    if (step[TYPE] === OPERATOR && step[SOURCE] === '.') {
+      if (state === EMPTY) {
+        console.log(value)
+      }
       state = STATE_DOT;
     }
 
     else if ((state === STATE_DOT || state === EMPTY) && step[TYPE] === NAME) {
-      state = STATE_NAME;
-      return DefaultScript.get(value === EMPTY ? scopes : value, step, stepName, function (_value_) {
-        value = _value_;
-      });
+
+      if (state === EMPTY && /^\d+$/.test(step[SOURCE])) {
+        value = parseInt(step[SOURCE], 10);
+      }
+
+      else {
+        state = STATE_NAME;
+        return DefaultScript.get(value === EMPTY ? scopes : value, step, stepName, function (_value_) {
+          value = _value_;
+        });
+      }
     }
 
-    else if (state === EMPTY && step[TYPE] === STRING) {
+    else if (state !== EMPTY) {
+      throw new Error('Invalid state');
+    }
+
+    else if (step[TYPE] === STRING) {
       value = step[SOURCE];
     }
 
+    else if (step[TYPE] === LOGIC) {
+      value = DefaultScript.logic(step, stepName);
+    }
+
     else {
-      throw new Error('Invalid state');
+      console.log(step)
+      throw new Error('Invalid step to resolve');
     }
   }, function (resolve) {
-    if (typeof next === 'function') {
-      next(55);
-    }
-    return 55;
+    resolve(value);
   });
 };
 DefaultScript.run = function () {
@@ -505,24 +631,21 @@ DefaultScript.run = function () {
     if (require.main === module) {
       var result;
       var name = process.argv[2];
+
       if (typeof name !== 'string') {
         throw new Error('Usage: node ds source.ds');
       }
+
       if (name === '--help') {
-        result = DefaultScript.import('lib/help');
-        if (typeof result === 'function' && result.name === '$pause$') {
-          result(function (value) {
-            // @todo what to do when logic pauses?
-          });
-        }
+        resumeCallback(DefaultScript.import('lib/help'))(function (value) {
+          // Don't care about the result, but we need to handle this
+        });
       }
+
       else {
-        result = DefaultScript.import(name);
-        if (typeof result === 'function' && result.name === '$pause$') {
-          result(function (value) {
-            // @todo what to do when logic pauses?
-          });
-        }
+        resumeCallback(DefaultScript.import(name))(function (value) {
+          // Don't care about the result, but we need to handle this
+        });
       }
     }
 
@@ -530,15 +653,7 @@ DefaultScript.run = function () {
       module.exports = function (source, name) {
         var logic = DefaultScript.logic(name, DefaultScript.parse(source));
         var scopes = [DefaultScript.global.scope()];
-        var result = logic(scopes);
-        return function (done) {
-          if (typeof result === 'function' && result.name === '$pause$') {
-            result(done);
-          }
-          else {
-            done(result);
-          }
-        };
+        return resumeCallback(logic(scopes, null, name, EMPTY));
       };
     }
   }
@@ -551,10 +666,10 @@ DefaultScript.run = function () {
     throw new Error('No valid environment found');
   }
 };
-DefaultScript.set = function (scopes, step, stepName, key, value, done) {
-  // always call done at resolve end
-  done(55);
-  console.log(key, value);
+DefaultScript.set = function (scopes, step, stepName, key, value) {
+  // always call next at resolve end
+  // next(55);
+  console.log('SET', key, value);
   // return DefaultScript.pause if needed during resolve walk
   return;
 }
@@ -590,7 +705,7 @@ DefaultScript.token = function (type, position, value) {
   token.$type$ = 'token';
   return token;
 };
-DefaultScript.walk = function (source, name, each, done) {
+DefaultScript.walk = function (sourceSteps, sourceName, each, next) {
   var i = 0;
   var paused = false;
   var resume;
@@ -602,31 +717,31 @@ DefaultScript.walk = function (source, name, each, done) {
     }
   };
 
-  var next = function () {
+  var nextStep = function () {
     if (typeof i === 'undefined') {
       i = 0;
     }
 
-    if (i >= source.length) {
-      done(resolve);
+    if (i >= sourceSteps.length) {
+      next(resolve);
     }
 
     else {
-      var handler = each(source[i], name);
+      var handler = each(sourceSteps[i], sourceName);
       i += 1;
 
-      if (typeof handler === 'function') {
-        handler(next);
+      if (typeof handler === 'function' && handler.name === '$pause$') {
+        handler(nextStep);
         paused = true;
       }
 
       else {
-        next();
+        nextStep();
       }
     }
   };
 
-  next();
+  nextStep();
 
   if (!paused) {
     return value;
@@ -670,6 +785,15 @@ Object.defineProperty(DefaultScript.global, 'deferred', {
       promise: promise
     };
   }
+});
+DefaultScript.global.expect = remember(null, '@expect', function $logic$(scopes, step, stepName, actualValue) {
+  var label = '@expect(actual: ' + DefaultScript.global.type(actualValue) + ')';
+  return remember(null, label, function $trap$(scopes, step, stepName, expectedValue) {
+    if (actualValue !== expectedValue) {
+      throw new Error('Woah');
+    }
+    console.log('QSNMQSKQNMSQS');
+  });
 });
 DefaultScript.global.format = function (item) {
   var type =  DefaultScript.global.type(item);
@@ -737,6 +861,18 @@ DefaultScript.global.format = function (item) {
 
   if (type === 'string') {
     return ["'", item, "'"].join('');
+  }
+
+  if (type === 'number' ||
+      type === 'boolean' ||
+      type === 'null' ||
+      type === 'undefined') {
+    return String(item);
+  }
+
+  if (type === 'logic') {
+    var name = item.stepName || 'native';
+    return ['{logic ', name, '}'].join('');
   }
 
   return type;
@@ -862,6 +998,24 @@ var source = typeof global === 'object' ? global : window;
 if (typeof require === 'function') {
   DefaultScript.global.require = require;
 }
+DefaultScript.global.test = remember(null, '@test', function $trap$(scopes, step, stepName, description) {
+  if (DefaultScript.global.type(description) !== 'string') {
+    throw DefaultScript.error(
+      new TypeError('string description must follow @test'), step, stepName
+    );
+  }
+
+  var label = '@test(' + description + ')';
+  return remember(null, label, function $trap$(scopes, step, stepName, block) {
+    if (DefaultScript.global.type(block) !== 'logic') {
+      throw DefaultScript.error(
+        new TypeError('logic block must follow @test'), step, stepName
+      );
+    }
+
+    return block(scopes, step, stepName);
+  });
+});
 DefaultScript.global.type = function $bust$(thing) {
   if (typeof thing === 'undefined') {
     return 'undefined';

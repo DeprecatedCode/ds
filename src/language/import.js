@@ -21,7 +21,7 @@ if (isNode) {
     var tree = DefaultScript.parse(contents, name);
     var logic = DefaultScript.logic(tree, name);
     var scopes = [DefaultScript.global.scope()];
-    return logic(scopes);
+    return logic(scopes, null, name, EMPTY);
   };
 }
 
@@ -36,7 +36,7 @@ else if (isBrowser) {
         var tree = DefaultScript.parse(contents, name);
         var logic = DefaultScript.logic(tree, name);
         var scopes = [DefaultScript.global.scope()];
-        resume(logic(scopes));
+        resume(logic(scopes, null, name, EMPTY));
       });
     });
   };

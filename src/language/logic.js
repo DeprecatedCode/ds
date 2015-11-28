@@ -1,5 +1,5 @@
 DefaultScript.logic = function (block, name) {
-  return function $logic$(scopes) {
+  return remember(block, name, function $logic$(scopes, step, stepName, value) {
     var stack = [];
     var key = [];
     var expectKey = false;
@@ -17,6 +17,8 @@ DefaultScript.logic = function (block, name) {
         if (expectKey) {
           throw DefaultScript.error(new Error('Key expected'), step);
         }
+
+        stack.push(step);
 
         return DefaultScript.expression(scopes, step, stepName, stack, function (value) {
           stack = [];
@@ -69,5 +71,5 @@ DefaultScript.logic = function (block, name) {
     }, function (resolve) {
       resolve(lastValue !== EMPTY ? lastValue : scopes);
     });
-  };
+  });
 };

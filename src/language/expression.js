@@ -1,4 +1,4 @@
-DefaultScript.expression = function (scopes, step, triggerStepName, expression, done) {
+DefaultScript.expression = function (scopes, step, triggerStepName, expression) {
   var stack = [];
   var left = [];
   var right = [];
@@ -7,23 +7,35 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
 
   return DefaultScript.walk(expression, triggerStepName, function (step, stepName) {
     if (step[TYPE] === BREAK || right.length > 0) {
-      var leftValue;
+      var operate = function (leftValue) {
+
+        return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
+          if (value.stepName === '@expect(actual: number)') {
+            throw new Error(String(_value_));
+          }
+
+          left = [];
+          right = [];
+          operation = [];
+          value = _value_;
+
+          if (step[TYPE] !== BREAK) {
+            right.push(step);
+          }
+        });
+      };
 
       if (left.length > 0) {
         if (value !== EMPTY) {
           throw new Error('Invalid situation');
         }
 
-        leftValue = DefaultScript.resolve(scopes, step, stepName, left);
-        left = [];
+        return DefaultScript.resolve(scopes, step, stepName, left, function (leftValue) {
+          return operate(leftValue);
+        });
       }
 
-      return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
-        left = [];
-        right = [];
-        operation = [];
-        value = _value_;
-      });
+      return operate(value);
     }
 
     else if (step[TYPE] === OPERATOR && step[SOURCE] !== '.') {
@@ -40,4 +52,4 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
   }, function (resolve) {
     resolve(value);
   });
-}
+};

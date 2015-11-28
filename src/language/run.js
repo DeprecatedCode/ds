@@ -3,24 +3,21 @@ DefaultScript.run = function () {
     if (require.main === module) {
       var result;
       var name = process.argv[2];
+
       if (typeof name !== 'string') {
         throw new Error('Usage: node ds source.ds');
       }
+
       if (name === '--help') {
-        result = DefaultScript.import('lib/help');
-        if (typeof result === 'function' && result.name === '$pause$') {
-          result(function (value) {
-            // @todo what to do when logic pauses?
-          });
-        }
+        resumeCallback(DefaultScript.import('lib/help'))(function (value) {
+          // Don't care about the result, but we need to handle this
+        });
       }
+
       else {
-        result = DefaultScript.import(name);
-        if (typeof result === 'function' && result.name === '$pause$') {
-          result(function (value) {
-            // @todo what to do when logic pauses?
-          });
-        }
+        resumeCallback(DefaultScript.import(name))(function (value) {
+          // Don't care about the result, but we need to handle this
+        });
       }
     }
 
@@ -28,15 +25,7 @@ DefaultScript.run = function () {
       module.exports = function (source, name) {
         var logic = DefaultScript.logic(name, DefaultScript.parse(source));
         var scopes = [DefaultScript.global.scope()];
-        var result = logic(scopes);
-        return function (done) {
-          if (typeof result === 'function' && result.name === '$pause$') {
-            result(done);
-          }
-          else {
-            done(result);
-          }
-        };
+        return resumeCallback(logic(scopes, null, name, EMPTY));
       };
     }
   }

@@ -1,20 +1,16 @@
-DefaultScript.error = function (err, step) {
+DefaultScript.error = function (err, step, stepName) {
   var desc;
 
-  if ('value' in step) {
-    desc = '`' + step[VALUE] + '`';
+  if (!step || !stepName) {
+    throw new Error('Invalid use of DefaultScript.error');
+  }
+
+  if (typeof step[SOURCE] === 'string' && step[SOURCE].length > 0) {
+    desc = '`' + step[SOURCE] + '`';
   }
 
   else {
-    desc = [
-      'break',
-      'name',
-      'operator',
-      'group',
-      'logic',
-      'array',
-      'string'
-    ][step[TYPE]];
+    desc = DefaultScript.tokenTypes[step[TYPE]].toLowerCase();
   }
 
   err.stack = [];
