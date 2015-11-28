@@ -1,0 +1,18 @@
+#!/bin/sh
+while true; do
+  clear
+  which inotifywait > /dev/null && echo "(build) Automatically builds DefaultScript when files change"
+  which inotifywait > /dev/null || echo "(build) Build DefaultScript"
+  echo
+  for f in src/language/*.js
+    do echo "Language $f"
+  done
+  for f in src/global/*.js
+    do echo "Global feature $f"
+  done
+  cat src/index.js src/language/*.js src/global/*.js src/end.js > index.js
+  echo
+  which inotifywait > /dev/null || exit
+  echo '(build) Waiting for changes'
+  inotifywait -r -e modify -e create -e delete -e move src 2>/dev/null
+done

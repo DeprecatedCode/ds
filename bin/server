@@ -1,12 +1,14 @@
 #!/bin/sh
-which inotifywait || echo '(server) Runs DefaultScript server'
-which inotifywait || node . lib/server
-which inotifywait || exit
+which inotifywait > /dev/null || echo '(server) Runs DefaultScript server'
+which inotifywait > /dev/null || node . lib/server
+which inotifywait > /dev/null || exit
 while true; do
   clear
   echo "(server) Automatically runs DefaultScript server when files change"
+  echo
   node . lib/server &
   PID=$!
+  echo
   echo '(server) Waiting for changes'
   inotifywait -r -e modify -e create -e delete -e move index.js lib 2>/dev/null
   kill $PID

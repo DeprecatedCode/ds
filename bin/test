@@ -1,14 +1,15 @@
 #!/bin/sh
 while true; do
   clear
-  which inotifywait && echo "(test) Automatically runs DefaultScript tests when files change"
-  which inotifywait || echo "(test) Run DefaultScript tests"
-  for f in ./tests/*.ds
+  which inotifywait > /dev/null && echo "(test) Automatically runs DefaultScript tests when files change"
+  which inotifywait > /dev/null || echo "(test) Run DefaultScript tests"
+  echo $TEST || TEST=*.ds
+  for f in ./tests/$TEST
     do echo; echo "Test $f:"
     node . $f
   done
   echo
-  which inotifywait || exit
+  which inotifywait > /dev/null || exit
   echo '(test) Waiting for changes'
   inotifywait -r -e modify -e create -e delete -e move index.js tests 2>/dev/null
 done

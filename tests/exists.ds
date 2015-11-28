@@ -20,7 +20,7 @@
 
   @test 'correctly identifies variables in higher scopes' {
     bat: nil
-    @ {@ {'bat' @exists}} @expect true
+    @scope {@scope {'bat' @exists}} @expect true
   }
 
   @test 'correctly identifies variables in current and created scope' {
