@@ -15,6 +15,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
         }
 
         leftValue = DefaultScript.resolve(scopes, step, stepName, left);
+        left = [];
       }
 
       return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {

@@ -97,6 +97,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
         }
 
         leftValue = DefaultScript.resolve(scopes, step, stepName, left);
+        left = [];
       }
 
       return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
@@ -473,7 +474,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, next) {
   var value = EMPTY;
   var state = EMPTY;
 
-  DefaultScript.walk(stack, triggerStepName, function (step, stepName) {
+  return DefaultScript.walk(stack, triggerStepName, function (step, stepName) {
     if (state === STATE_NAME && step[TYPE] === OPERATOR && step[SOURCE] === '.') {
       state = STATE_DOT;
     }
@@ -483,6 +484,10 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, next) {
       return DefaultScript.get(value === EMPTY ? scopes : value, step, stepName, function (_value_) {
         value = _value_;
       });
+    }
+
+    else if (state === EMPTY && step[TYPE] === STRING) {
+      value = step[SOURCE];
     }
 
     else {
