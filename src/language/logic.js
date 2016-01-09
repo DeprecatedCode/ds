@@ -12,14 +12,13 @@ DefaultScript.logic = function (block, name) {
     };
 
     return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-
+console.log(step[1], step[2], step[0]())
       if (step[TYPE] === BREAK) {
         if (expectKey) {
           throw DefaultScript.error(new Error('Key expected'), step);
         }
 
         stack.push(step);
-
         return DefaultScript.expression(scopes, step, stepName, stack, function (value) {
           stack = [];
 
@@ -32,13 +31,12 @@ DefaultScript.logic = function (block, name) {
               key = [];
             });
           }
-
         });
       }
 
       else if (step[TYPE] === OPERATOR && step[SOURCE] === ':') {
         if (expectKey || key.length > 0) {
-          throw DefaultScript.error(new Error('Unexpected :'), step);
+          throw DefaultScript.error(new Error('Unexpected :'), step, stepName);
         }
 
         if (stack.length === 0) {

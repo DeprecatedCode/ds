@@ -1,9 +1,10 @@
-DefaultScript.pause = function (how) {
+DefaultScript.pause = function (wait) {
   var done;
+  var noResume = new Error('Nothing to do when resuming pause');
 
-  how(function () {
+  wait(function $resume$() {
     if (typeof done !== 'function') {
-      throw new Error('Nothing to do when resuming pause');
+      throw noResume;
     }
     done();
   });

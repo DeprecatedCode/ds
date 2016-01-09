@@ -5,6 +5,7 @@
  * @tel (919) 426-2830
  * @location Ann Arbor, MI
  * @date Thursday, November 26th, 2015
+ * @date Saturday, January 9th, 2016
  * @desc Full DefaultScript engine rewrite for modularity and extensibility.
  */
 (function () {
@@ -29,10 +30,10 @@ var isNode = typeof global === 'object' && typeof require === 'function';
 var resumeCallback = function (result) {
   return function (next) {
     if (typeof next !== 'function') {
-      throw new Error('resumeCallback(result)(...) function required');
+      throw new Error('resumeCallback(result)(handler) handler function required');
     }
 
-    if (typeof result === 'function' && result.$pause$) {
+    if (typeof result === 'function' && result.name === '$pause$') {
       result(next);
     }
 
@@ -175,7 +176,7 @@ DefaultScript.get = function (scopes, step, stepName) {
 if (isNode) {
   var fs = require('fs');
   var path = require('path');
-  DefaultScript.import = function (name) {
+  DefaultScript.import = function (name, step) {
     var stats;
 
     try {
@@ -191,7 +192,16 @@ if (isNode) {
       name = path.join(name, DefaultScript.index + EXTENSION);
     }
 
-    var contents = fs.readFileSync(name, 'utf8')
+    var contents;
+
+    try {
+      contents = fs.readFileSync(name, 'utf8');
+    }
+
+    catch (e) {
+      throw ds.errorMessage(e, step);
+    }
+
     var tree = DefaultScript.parse(contents, name);
     var logic = DefaultScript.logic(tree, name);
     var scopes = [DefaultScript.global.scope()];
@@ -219,6 +229,7 @@ else if (isBrowser) {
 else {
   throw new Error('@import is not supported on this platform');
 }
+DefaultScript.index = 'index';
 DefaultScript.literals = {
   'true':       true,
   'false':      false,
@@ -239,14 +250,13 @@ DefaultScript.logic = function (block, name) {
     };
 
     return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-
+console.log(step[1], step[2], step[0]())
       if (step[TYPE] === BREAK) {
         if (expectKey) {
           throw DefaultScript.error(new Error('Key expected'), step);
         }
 
         stack.push(step);
-
         return DefaultScript.expression(scopes, step, stepName, stack, function (value) {
           stack = [];
 
@@ -259,13 +269,12 @@ DefaultScript.logic = function (block, name) {
               key = [];
             });
           }
-
         });
       }
 
       else if (step[TYPE] === OPERATOR && step[SOURCE] === ':') {
         if (expectKey || key.length > 0) {
-          throw DefaultScript.error(new Error('Unexpected :'), step);
+          throw DefaultScript.error(new Error('Unexpected :'), step, stepName);
         }
 
         if (stack.length === 0) {
@@ -562,12 +571,13 @@ DefaultScript.parse = function (source, name) {
 
   return logic;
 };
-DefaultScript.pause = function (how) {
+DefaultScript.pause = function (wait) {
   var done;
+  var noResume = new Error('Nothing to do when resuming pause');
 
-  how(function () {
+  wait(function $resume$() {
     if (typeof done !== 'function') {
-      throw new Error('Nothing to do when resuming pause');
+      throw noResume;
     }
     done();
   });
@@ -633,26 +643,30 @@ DefaultScript.run = function () {
       var name = process.argv[2];
 
       if (typeof name !== 'string') {
-        throw new Error('Usage: node ds source.ds');
+        throw new Error('Usage: ds source.ds');
       }
 
       if (name === '--help') {
         resumeCallback(DefaultScript.import('lib/help'))(function (value) {
           // Don't care about the result, but we need to handle this
+          // console.log('Result:', value);
         });
       }
 
       else {
         resumeCallback(DefaultScript.import(name))(function (value) {
           // Don't care about the result, but we need to handle this
+          // console.log('Result:', value);
         });
       }
     }
 
     else {
       module.exports = function (source, name) {
+        throw new Error('Not implemented');
         var logic = DefaultScript.logic(name, DefaultScript.parse(source));
         var scopes = [DefaultScript.global.scope()];
+        console.log(logic)
         return resumeCallback(logic(scopes, null, name, EMPTY));
       };
     }

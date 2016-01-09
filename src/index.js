@@ -5,6 +5,7 @@
  * @tel (919) 426-2830
  * @location Ann Arbor, MI
  * @date Thursday, November 26th, 2015
+ * @date Saturday, January 9th, 2016
  * @desc Full DefaultScript engine rewrite for modularity and extensibility.
  */
 (function () {
@@ -29,10 +30,10 @@ var isNode = typeof global === 'object' && typeof require === 'function';
 var resumeCallback = function (result) {
   return function (next) {
     if (typeof next !== 'function') {
-      throw new Error('resumeCallback(result)(...) function required');
+      throw new Error('resumeCallback(result)(handler) handler function required');
     }
 
-    if (typeof result === 'function' && result.$pause$) {
+    if (typeof result === 'function' && result.name === '$pause$') {
       result(next);
     }
 

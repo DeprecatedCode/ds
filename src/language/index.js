@@ -1,0 +1,1 @@
+DefaultScript.index = 'index';

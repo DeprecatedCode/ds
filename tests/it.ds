@@ -1,0 +1,5 @@
+@test 'The value of @it comes from the argument in a logic block' {
+  4 {
+    @it @expect 4
+  }
+}

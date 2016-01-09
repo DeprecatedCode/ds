@@ -1,7 +1,7 @@
 if (isNode) {
   var fs = require('fs');
   var path = require('path');
-  DefaultScript.import = function (name) {
+  DefaultScript.import = function (name, step) {
     var stats;
 
     try {
@@ -17,7 +17,16 @@ if (isNode) {
       name = path.join(name, DefaultScript.index + EXTENSION);
     }
 
-    var contents = fs.readFileSync(name, 'utf8')
+    var contents;
+
+    try {
+      contents = fs.readFileSync(name, 'utf8');
+    }
+
+    catch (e) {
+      throw ds.errorMessage(e, step);
+    }
+
     var tree = DefaultScript.parse(contents, name);
     var logic = DefaultScript.logic(tree, name);
     var scopes = [DefaultScript.global.scope()];
