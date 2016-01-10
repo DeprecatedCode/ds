@@ -63,6 +63,10 @@ DefaultScript.parse = function (source, name) {
   };
 
   for (var i = 0; i < source.length; i++) {
+    if (source[i] === '\r') {
+      continue;
+    }
+
     if (source[i] === '\n') {
       isComment = false;
       breaks.push(i);

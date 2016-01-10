@@ -12,13 +12,11 @@ DefaultScript.logic = function (block, name) {
     };
 
     return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-console.log(step[1], step[2], step[0]())
       if (step[TYPE] === BREAK) {
         if (expectKey) {
           throw DefaultScript.error(new Error('Key expected'), step);
         }
 
-        stack.push(step);
         return DefaultScript.expression(scopes, step, stepName, stack, function (value) {
           stack = [];
 

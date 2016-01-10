@@ -1,6 +1,6 @@
 DefaultScript.run = function () {
   if (isNode) {
-    if (require.main === module) {
+    if (isMain) {
       var result;
       var name = process.argv[2];
 

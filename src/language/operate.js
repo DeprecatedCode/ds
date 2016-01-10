@@ -2,16 +2,14 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
 
   if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
     return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
-      return leftValue(scopes, step, stepName, rightValue, next);
+      return leftValue(scopes, step, stepName, rightValue);
     });
   }
-
-  // DefaultScript.global.log('\n\nOperate:', leftValue, operation, right, '\n\n');
 
   var leftType = DefaultScript.global.type(leftValue);
 
   var resolveRight = function (fn) {
-    return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
+    return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, right), function (rightValue) {
       var rightType = DefaultScript.global.type(rightValue);
       return fn(rightType, rightValue);
     });
@@ -19,9 +17,10 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
 
   if (operation.length === 0) {
     return resolveRight(function (rightType, rightValue) {
-      console.log('###', leftValue, operation, rightValue)
+      // console.log('Operate:', leftValue, operation, rightValue)
+
       if (rightType === 'logic') {
-        return rightValue(scopes, step, stepName, leftValue, next);
+        return rightValue(scopes, step, stepName, leftValue);
       }
 
       else if (rightType === 'function') {
@@ -46,13 +45,13 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
   else if (operation[operation.length - 1][SOURCE] === '!') {
     leftValue = !leftValue;
     operation.pop();
-    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, next);
+    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right);
   }
 
   else if (operation.length > 1 && operation[0][SOURCE] === '-') {
     leftValue = -1 * leftValue;
     operation.pop();
-    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, next);
+    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right);
   }
 
   else {

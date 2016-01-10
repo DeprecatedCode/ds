@@ -4,22 +4,29 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression) 
   var right = [];
   var operation = [];
   var value = EMPTY;
+  expression.push(END);
 
   return DefaultScript.walk(expression, triggerStepName, function (step, stepName) {
-    if (step[TYPE] === BREAK || right.length > 0) {
+    if (step !== END && (step[TYPE] === NAME || (step[TYPE] === OPERATOR && step[SOURCE] === '.'))) {
+      var lastLeft = left.length > 0 ? left[left.length - 1] : null;
+      if ((value === EMPTY && operation.length === 0 && right.length === 0) &&
+          (lastLeft === null || lastLeft[TYPE] === OPERATOR)) {
+        left.push(step);
+      }
+      else {
+        right.push(step);
+      }
+    }
+
+    else if (step === END || step[TYPE] === BREAK || right.length > 0) {
       var operate = function (leftValue) {
-
-        return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right, function (_value_) {
-          if (value.stepName === '@expect(actual: number)') {
-            throw new Error(String(_value_));
-          }
-
+        return transformPossiblePause(DefaultScript.operate(scopes, step, stepName, leftValue, operation, right), function (_value_) {
           left = [];
           right = [];
           operation = [];
           value = _value_;
 
-          if (step[TYPE] !== BREAK) {
+          if (step !== END && step[TYPE] !== BREAK) {
             right.push(step);
           }
         });
@@ -30,7 +37,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression) 
           throw new Error('Invalid situation');
         }
 
-        return DefaultScript.resolve(scopes, step, stepName, left, function (leftValue) {
+        return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, left), function (leftValue) {
           return operate(leftValue);
         });
       }
@@ -38,7 +45,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression) 
       return operate(value);
     }
 
-    else if (step[TYPE] === OPERATOR && step[SOURCE] !== '.') {
+    else if (step[TYPE] === OPERATOR) {
       operation.push(step);
     }
 
