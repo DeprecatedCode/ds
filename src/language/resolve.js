@@ -4,7 +4,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
   const STATE_NUMBER = 2;
   const STATE_DECIMAL = 3;
 
-  // DefaultScript.global.log('Resolve:', stack);
+  DefaultScript.global.log('Resolve:', stack);
   var value = EMPTY;
   var state = EMPTY;
 

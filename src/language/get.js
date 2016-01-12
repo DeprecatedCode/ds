@@ -11,10 +11,35 @@ DefaultScript.get = function (scopes, step, stepName) {
       throw DefaultScript.error(new TypeError('cannot get property ' + key + ' of null'), step, stepName);
     }
 
-    var proto = Object.getPrototypeOf(scopes[i]);
+    var proto;
+
+    switch (typeof scopes[i]) {
+      case 'number':
+        proto = Number;
+        break;
+      case 'boolean':
+        proto = Boolean;
+        break;
+      case 'string':
+        proto = String;
+        break;
+      case 'function':
+        proto = Function;
+        break;
+      case 'object':
+        proto = Object.getPrototypeOf(scopes[i]);
+        break;
+      default:
+        throw new Error('Invalid scope type: ' + (typeof scopes[i]));
+    }
+
     if ((typeof scopes[i] === 'object' && (key in scopes[i])) ||
         (proto && (key in proto))) {
-      return scopes[i][key];
+      var val = scopes[i][key];
+      if (typeof val === 'function') {
+        val = val.bind(scopes[i]);
+      }
+      return val;
     }
   }
 
@@ -24,6 +49,8 @@ DefaultScript.get = function (scopes, step, stepName) {
       return DefaultScript.global[globalKey];
     }
   }
+
+  throw new Error;
 
   throw DefaultScript.error(new Error(key + ' is not defined'), step, stepName);
 };

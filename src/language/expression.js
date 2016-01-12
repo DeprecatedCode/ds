@@ -9,6 +9,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression) 
   return DefaultScript.walk(expression, triggerStepName, function (step, stepName) {
     if (step !== END && (step[TYPE] === NAME || (step[TYPE] === OPERATOR && step[SOURCE] === '.'))) {
       var lastLeft = left.length > 0 ? left[left.length - 1] : null;
+      console.log(value, operation, right);
       if ((value === EMPTY && operation.length === 0 && right.length === 0) &&
           (lastLeft === null || lastLeft[TYPE] === OPERATOR)) {
         left.push(step);
