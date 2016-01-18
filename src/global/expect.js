@@ -4,6 +4,6 @@ DefaultScript.global.expect = remember(null, '@expect', function $logic$(scopes,
     if (actualValue !== expectedValue) {
       throw new Error('Woah');
     }
-    console.log('QSNMQSKQNMSQS');
+    DefaultScript.global.log('QSNMQSKQNMSQS');
   });
 });

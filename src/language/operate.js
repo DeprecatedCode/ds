@@ -1,6 +1,20 @@
-DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, right) {
+DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, right, onException) {
+  if (typeof onException !== 'function') {
+    throw new TypeError('onException must be provided');
+  }
+
+  if (step === END) {
+    throw new Error('Cannot provide END as step to operate()');
+  }
+
+  // DEBUG
+  DefaultScript.global.log('Operate:');
+  DefaultScript.global.log('Left = ', leftValue);
+  DefaultScript.global.log('Operation:', operation);
+  DefaultScript.global.log('Right = ', right);
 
   if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
+    DefaultScript.global.log('B', right);
     return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
       return leftValue(scopes, step, stepName, rightValue);
     });
@@ -9,18 +23,44 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
   var leftType = DefaultScript.global.type(leftValue);
 
   var resolveRight = function (fn) {
-    return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, right), function (rightValue) {
+    return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, right, false, onException), function (rightValue) {
       var rightType = DefaultScript.global.type(rightValue);
       return fn(rightType, rightValue);
     });
-  }
+  };
+
+  var afterRightResolution = function (combinedOperator, rightType, rightValue) {
+    if (combinedOperator === '+') {
+      return leftValue + rightValue;
+    }
+
+    else if (combinedOperator === '-') {
+      return leftValue - rightValue;
+    }
+
+    else if (combinedOperator === '*') {
+      return leftValue * rightValue;
+    }
+
+    else if (combinedOperator === '/') {
+      return leftValue / rightValue;
+    }
+
+    else {
+      throw new Error('Operation ' + combinedOperator + ' not implemented');
+    }
+  };
 
   if (operation.length === 0) {
+    if (right.length === 0) {
+      return leftValue;
+    }
+
     return resolveRight(function (rightType, rightValue) {
-      // console.log('Operate:', leftValue, operation, rightValue)
+      // DefaultScript.global.log('Operate:', leftValue, operation, rightValue)
 
       if (rightType === 'logic') {
-        return rightValue(scopes, step, stepName, leftValue);
+        return rightValue(scopes, step, stepName, leftValue, onException);
       }
 
       else if (rightType === 'function') {
@@ -29,29 +69,20 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
         }
 
         catch (e) {
-          throw new DefaultScript.error(e, step, stepName);
+          onException(e, step, stepName);
         }
       }
 
+      else if (leftType === 'string') {
+        return leftValue + String(rightValue);
+      }
+
       else {
-        var message = 'Invalid combination, ' + leftType + ' and ' + rightType;
-        throw DefaultScript.error(
-          new Error(message), step, stepName
-        );
+        DefaultScript.global.log('Left:', leftValue);
+        DefaultScript.global.log('Right:', rightValue);
+        throw new Error('Invalid combination, ' + leftType + ' and ' + rightType);
       }
     });
-  }
-
-  else if (operation[operation.length - 1][SOURCE] === '!') {
-    leftValue = !leftValue;
-    operation.pop();
-    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right);
-  }
-
-  else if (operation.length > 1 && operation[0][SOURCE] === '-') {
-    leftValue = -1 * leftValue;
-    operation.pop();
-    return DefaultScript.operate(scopes, step, stepName, leftValue, operation, right);
   }
 
   else {
@@ -59,30 +90,19 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
       return op[SOURCE];
     }).join('');
 
-    if (combinedOperator === '+') {
+    if (combinedOperator.length > 1 && combinedOperator[combinedOperator.length - 1] === '-') {
+      combinedOperator = combinedOperator.substr(0, combinedOperator.length - 1);
+
       return resolveRight(function (rightType, rightValue) {
-        return leftValue + rightValue;
+        if (rightType !== 'number') {
+          throw new Error('Cannot negate a value of type ' + rightType);
+        }
+        return afterRightResolution(combinedOperator, rightType, -1 * rightValue);
       });
     }
 
-    else if (combinedOperator === '-') {
-      return resolveRight(function (rightType, rightValue) {
-        return leftValue - rightValue;
-      });
-    }
-
-    else if (combinedOperator === '*') {
-      return resolveRight(function (rightType, rightValue) {
-        return leftValue * rightValue;
-      });
-    }
-
-    else if (combinedOperator === '/') {
-      return resolveRight(function (rightType, rightValue) {
-        return leftValue / rightValue;
-      });
-    }
-
-    throw new Error('Operation ' + combinedOperator + ' not implemented');
+    return resolveRight(function (rightType, rightValue) {
+      return afterRightResolution(combinedOperator, rightType, rightValue);
+    });
   }
 };

@@ -1,14 +1,26 @@
 DefaultScript.get = function (scopes, step, stepName) {
+  if (step[TYPE] !== NAME) {
+    throw new SyntaxError('Cannot get value');
+  }
+
   var key = step[SOURCE];
   var value;
 
   for (var i = 0; i < scopes.length; i++) {
     if (typeof scopes[i] === 'undefined') {
-      throw DefaultScript.error(new TypeError('cannot get property ' + key + ' of undefined'), step, stepName);
+      throw new TypeError('cannot get property ' + key + ' of undefined');
     }
 
     if (scopes[i] === null) {
-      throw DefaultScript.error(new TypeError('cannot get property ' + key + ' of null'), step, stepName);
+      throw new TypeError('cannot get property ' + key + ' of null');
+    }
+
+    if (typeof scopes[i] === 'object' && (key in scopes[i])) {
+      var val = scopes[i][key];
+      if (DefaultScript.global.type(val) === 'function') {
+        val = val.bind(scopes[i]);
+      }
+      return val;
     }
 
     var proto;
@@ -33,10 +45,9 @@ DefaultScript.get = function (scopes, step, stepName) {
         throw new Error('Invalid scope type: ' + (typeof scopes[i]));
     }
 
-    if ((typeof scopes[i] === 'object' && (key in scopes[i])) ||
-        (proto && (key in proto))) {
+    if (proto && (key in proto)) {
       var val = scopes[i][key];
-      if (typeof val === 'function') {
+      if (DefaultScript.global.type(val) === 'function') {
         val = val.bind(scopes[i]);
       }
       return val;
@@ -49,8 +60,4 @@ DefaultScript.get = function (scopes, step, stepName) {
       return DefaultScript.global[globalKey];
     }
   }
-
-  throw new Error;
-
-  throw DefaultScript.error(new Error(key + ' is not defined'), step, stepName);
 };

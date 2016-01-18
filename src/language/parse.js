@@ -1,4 +1,8 @@
-DefaultScript.parse = function (source, name) {
+DefaultScript.parse = function (source, name, onException) {
+  if (typeof onException !== 'function') {
+    throw new TypeError('onException must be provided');
+  }
+
   var syntax = DefaultScript.syntax;
   var isEscape = false;
   var isComment = false;
@@ -147,10 +151,10 @@ DefaultScript.parse = function (source, name) {
       }
 
       if (!head) {
-        throw DefaultScript.error(new SyntaxError('Unexpected'), {
+        onException(new SyntaxError('Unexpected'), {
           value: source[i],
           position: position(i)
-        });
+        }, name);
       }
     }
 

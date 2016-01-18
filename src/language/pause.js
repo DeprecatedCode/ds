@@ -6,7 +6,8 @@ DefaultScript.pause = function (wait) {
     if (typeof done !== 'function') {
       throw noResume;
     }
-    done();
+
+    done.apply(null, Array.prototype.slice.call(arguments));
   });
 
   return function $pause$(_done_) {

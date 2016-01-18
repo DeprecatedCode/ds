@@ -1,10 +1,19 @@
-DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
+DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOnEmpty, onException) {
+  if (typeof onException !== 'function') {
+    throw new TypeError('onException must be provided');
+  }
+
   const STATE_DOT = 0;
   const STATE_NAME = 1;
-  const STATE_NUMBER = 2;
-  const STATE_DECIMAL = 3;
+  const STATE_VALUE = 2;
+  const STATE_NUMBER = 3;
+  const STATE_DECIMAL = 4;
 
-  DefaultScript.global.log('Resolve:', stack);
+  // DEBUG
+  // DefaultScript.global.log('Resolve:', stack.map(function (s) {
+  //   return s[SOURCE];
+  // }));
+
   var value = EMPTY;
   var state = EMPTY;
 
@@ -20,7 +29,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
       }
 
       else if (state === STATE_DOT) {
-        throw DefaultScript.error(new SyntaxError('Invalid .'), step, stepName);
+        throw new SyntaxError('Invalid .');
       }
 
       else {
@@ -43,6 +52,13 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
       else {
         state = STATE_NAME;
         return transformPossiblePause(DefaultScript.get(value === EMPTY ? scopes : [value], step, stepName), function (_value_) {
+          if (typeof _value_ === 'undefined') {
+            // DEBUG
+            // DefaultScript.global.log('Value:', value);
+            // DefaultScript.global.log('Scopes:', scopes);
+
+            throw new Error(step[SOURCE] + ' is not defined');
+          }
           value = _value_;
         });
       }
@@ -53,11 +69,27 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
     }
 
     else if (step[TYPE] === STRING) {
+      state = STATE_VALUE;
       value = step[SOURCE];
     }
 
+    else if (step[TYPE] === GROUP) {
+      state = STATE_VALUE;
+      return transformPossiblePause(DefaultScript.group(scopes, step, stepName, onException), function (_value_) {
+        value = _value_;
+      });
+    }
+
     else if (step[TYPE] === LOGIC) {
-      value = DefaultScript.logic(step, stepName);
+      state = STATE_VALUE;
+      value = DefaultScript.logic(scopes, step, stepName);
+    }
+
+    else if (step[TYPE] === ARRAY) {
+      state = STATE_VALUE;
+      return transformPossiblePause(DefaultScript.array(scopes, step, stepName, onException), function (_value_) {
+        value = _value_;
+      });
     }
 
     else {
@@ -65,5 +97,5 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack) {
     }
   }, function (resolve) {
     resolve(value);
-  });
+  }, onException);
 };

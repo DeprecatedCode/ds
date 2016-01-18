@@ -1,7 +1,7 @@
 if (isNode) {
   var fs = require('fs');
   var path = require('path');
-  DefaultScript.import = function (name, step) {
+  DefaultScript.import = function (name, step, onException) {
     var stats;
 
     try {
@@ -27,25 +27,25 @@ if (isNode) {
       throw ds.errorMessage(e, step);
     }
 
-    var tree = DefaultScript.parse(contents, name);
-    var logic = DefaultScript.logic(tree, name);
+    var tree = DefaultScript.parse(contents, name, onException);
+    var logic = DefaultScript.logic([], tree, name);
     var scopes = [DefaultScript.global.scope()];
-    return logic(scopes, null, name, EMPTY);
+    return logic(scopes, null, name, undefined, onException);
   };
 }
 
 else if (isBrowser) {
-  DefaultScript.import = function (name) {
+  DefaultScript.import = function (name, step, onException) {
     if (name.substr(name.length - 3) !== EXTENSION) {
       name = name + EXTENSION;
     }
 
     return DefaultScript.pause(function (resume) {
       DefaultScript.global.request(name)(function (contents) {
-        var tree = DefaultScript.parse(contents, name);
-        var logic = DefaultScript.logic(tree, name);
+        var tree = DefaultScript.parse(contents, name, onException);
+        var logic = DefaultScript.logic([], tree, name);
         var scopes = [DefaultScript.global.scope()];
-        resume(logic(scopes, null, name, EMPTY));
+        resume(logic(scopes, null, name, undefined, onException));
       });
     });
   };

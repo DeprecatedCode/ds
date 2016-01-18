@@ -91,7 +91,6 @@ require('./src/global/type');
 require('./src/language/array');
 require('./src/language/block');
 require('./src/language/combine');
-require('./src/language/error');
 require('./src/language/expression');
 require('./src/language/get');
 require('./src/language/group');

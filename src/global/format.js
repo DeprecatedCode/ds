@@ -74,7 +74,10 @@ DefaultScript.global.format = function (item) {
   }
 
   if (type === 'logic') {
-    var name = item.stepName || 'native';
+    var name = 'native';
+    if (item.step) {
+      name = item.stepName + ' '  + item.step[POSITION]();
+    }
     return ['{logic ', name, '}'].join('');
   }
 
