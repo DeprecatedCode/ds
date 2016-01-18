@@ -52,7 +52,7 @@ All words represent symbol names.
 ```bash
 a: 1
 
-a @console.log
+a @log
 
 # 1
 ```
@@ -64,8 +64,8 @@ x: {a: 1}  # Read: x is something that sets a to 1 on any scope
 
 @ x
 
-a @console.log
-x.a @console.log
+a @log
+x.a @log
 
 # 1
 # undefined
@@ -78,7 +78,7 @@ x: {a: 1}  # Read: x is something that sets a to 1 on any scope
 
 y: {} x    # Read: create a new scope since we are not invoking based on the parent
 
-[a, x.a, y.a].each @console.log
+[a, x.a, y.a].each @log
 
 # undefined
 # undefined
@@ -88,9 +88,9 @@ y: {} x    # Read: create a new scope since we are not invoking based on the par
 ##### 4. Logic blocks are not invoked until used. For example:
 
 ```bash
-x: {a: 1, 2 @console.log}
+x: {a: 1, 2 @log}
 
-({} x).a @console.log
+({} x).a @log
 
 # 2
 # 1
@@ -107,7 +107,7 @@ q: x y  # Read: create scope q based on x and y
 q z     # Read: execute z in the context of q, modifying q
 @ z     # Read: execute z in the current context, modifying it
 
-[q.a, q.b, q.c, a, b, c].each @console.log
+[q.a, q.b, q.c, a, b, c].each @log
 
 # 1
 # 2
@@ -123,8 +123,8 @@ q z     # Read: execute z in the context of q, modifying q
 a: 1
 x: {} {a::, b: b, c: 3}
 
-[x.a, x.b, x.c] @console.log
-[a, b, c] @console.log
+[x.a, x.b, x.c] @log
+[a, b, c] @log
 
 # 1
 # undefined
@@ -137,7 +137,7 @@ x: {} {a::, b: b, c: 3}
 ##### 7. The new scope will be returned by the operation of two logic blocks and can be continually chained. For example:
 
 ```bash
-{name: 'Jacob'} {name @console.log} {name: `Superhero ${name}`} {name @console.log}
+{name: 'Jacob'} {name @log} {name: `Superhero ${name}`} {name @log}
 
 # Jacob
 # Superhero Jacob
@@ -151,7 +151,7 @@ Person: {
   lastName: 'MacBeth'
 
   print get: {
-    `${firstName} ${lastName}` @console.log
+    `${firstName} ${lastName}` @log
   }
 }
 
@@ -171,8 +171,8 @@ x: {a: 1, {a + 1}}
 y: {a: 5} x
 z: {q: {a + 2}, q}
 
-y @console.log
-{a: 2} z @console.log
+y @log
+{a: 2} z @log
 
 # 2
 # 4
@@ -232,7 +232,7 @@ y @console.log
 ### Examples
 
 ```bash
-'Hello World' @console.log
+'Hello World' @log
 
 # Hello World
 ```
@@ -240,7 +240,7 @@ y @console.log
 ```bash
 Hello: {
   ['Hello', what].each {
-    @it @console.log
+    @it @log
   }
 }
 
@@ -260,7 +260,7 @@ Adder: {a + b}
 
 AddFour: {a: 4, Adder}
 
-{b: 6} AddFour @console.log
+{b: 6} AddFour @log
 
 # 10
 ```
@@ -272,16 +272,16 @@ ValidateName: {
 }
 
 = @typeError {
-  @it.message @console.log
+  @it.message @log
 }
 
 = @ValueError {
-  `There was an error with the name: ${@it.message}` @console.log
+  `There was an error with the name: ${@it.message}` @log
 }
 
 {name: 'Bob'} ValidateName
 
-'Success, the name is ok' @console.log
+'Success, the name is ok' @log
 
 # There was an error with the name: Name must be at least 5 characters long
 ```
@@ -311,8 +311,8 @@ bob: {salary: 40000, name: 'Bob'} Employee
 bob.salary: 50000
 15000 bob.raiseSalary
 
-sarah.description @console.log
-bob.description @console.log
+sarah.description @log
+bob.description @log
 
 # Person: Sarah
 # Employee: Bob making 65000 per year

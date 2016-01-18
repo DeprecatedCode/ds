@@ -1,4 +1,4 @@
-L: @console.log
+L: @log
 
 '-------------------------------'                     L
 'DefaultScript Test Suite: Scope'                     L

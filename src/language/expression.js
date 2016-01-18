@@ -24,7 +24,6 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
       lastStep = step;
       lastStepName = stepName;
     }
-
     var reset = function (_value_) {
       left = [];
       right = [];

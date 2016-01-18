@@ -3,13 +3,13 @@ Item: 'lib/item' @import @class
 
 {
   item: 'lib/items/' @it @import,
-  world.items {@it @console.log, (@it): Item item}
+  world.items {@it @log, (@it): Item item}
 } [
   'pickaxe'
 ]
 
 
-items @console.log
+items @log
 
 pickaxe: Item {
   name: 'Pickaxe'
@@ -21,7 +21,7 @@ pickaxe: Item {
   }
 
   chop: {
-    'Chop chop' @console.log
+    'Chop chop' @log
     {:meat - 1} world.materials
     {:wood + 1} world.materials
   }

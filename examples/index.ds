@@ -1,18 +1,18 @@
-'Hello, World!' @console.log
+'Hello, World!' @log
 
 # Note that the variable a is isolated to the (group)
 3.4 + 4 - - 2.6 + (a: 10, 22/7 - a - 0.00126) \
-  {'Pi is about ' @it '!'} @console.log
+  {'Pi is about ' @it '!'} @log
 
 # a is still undefined
 'Does variable a exist on this scope? ' (
   'a' @exists {true ? 'Yes', false ? 'No'}
-) '!' @console.log
+) '!' @log
 
-{nil @it.toUpperCase '...' @console.log} [
+{nil @it.toUpperCase '...' @log} [
   'Three'
   'Two'
   'One'
 ]
 
-'Liftoff!' @console.log
+'Liftoff!' @log

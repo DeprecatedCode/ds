@@ -27,22 +27,19 @@ g.isBrowser = typeof window === 'object';
 g.isNode = typeof global === 'object' && typeof require === 'function';
 g.isMain = g.isNode && require.main === module;
 
-g.transformPossiblePause = function (result, transform) {
-  if (typeof result === 'function' && result.name === '$pause$') {
-    return g.DefaultScript.pause(function (resume) {
-      result(function (value) {
-        return g.transformPossiblePause(value, function (liberatedValue) {
-          if (typeof transform === 'function') {
-            var transformedValue = transform(liberatedValue);
-            return g.transformPossiblePause(transformedValue, resume);
-          }
-          return resume(liberatedValue);
-        });
-      });
-    });
+g.transformPossiblePause = function (original, transform) {
+  if (typeof original === 'function' && original.name === '$pause$') {
+    original.onResume = function (resume) {
+      pause.done = function (value) {
+        if (typeof transform === 'function') {
+          return resume(transform(value));
+        }
+        return resume(value);
+      }
+    }
   }
 
-  return typeof transform === 'function' ? transform(result) : result;
+  return typeof transform === 'function' ? transform(original) : original;
 };
 
 g.resumeCallback = function (result) {
@@ -52,7 +49,7 @@ g.resumeCallback = function (result) {
     }
 
     if (typeof result === 'function' && result.name === '$pause$') {
-      result(next);
+      result.onResume(next);
     }
 
     else {

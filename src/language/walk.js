@@ -17,7 +17,6 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
       if (typeof i === 'undefined') {
         i = 0;
       }
-
       if (i >= sourceSteps.length) {
         return transformPossiblePause(next(), resolve);
       }
@@ -27,7 +26,7 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
           lastStep = sourceSteps[i];
         }
 
-        return transformPossiblePause(each(sourceSteps[i], sourceName), function () {
+        return transformPossiblePause(each(sourceSteps[i], sourceName), function (v) {
           i += 1;
           return nextStep();
         });

@@ -21,7 +21,6 @@ DefaultScript.set = function (scopes, step, stepName, key, value, onException) {
   }
 
   var contextStack = key.slice(0, key.length - 2);
-  DefaultScript.global.log('X', contextStack)
 
   return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, contextStack, true), function (context) {
     context[lastKey[SOURCE]] = value;

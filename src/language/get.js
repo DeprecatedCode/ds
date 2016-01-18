@@ -25,12 +25,15 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
     }
 
     if ((itemType in DefaultScript.protoOverrides) && (key in DefaultScript.protoOverrides[itemType])) {
-      return DefaultScript.protoOverrides[itemType][key]([], step, stepName, scopes[i], onException);
+      var logic = DefaultScript.protoOverrides[itemType][key];
+      return logic([], step, stepName, scopes[i], onException);
     }
 
     var proto;
 
     switch (itemType) {
+      case 'logic':
+        throw new Error('Cannot read property ' + key + ' of logic block');
       case 'number':
         proto = Number;
         break;

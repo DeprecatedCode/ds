@@ -1,3 +1,5 @@
+// @TODO fix unterminated expression? {...
+
 DefaultScript.parse = function (source, name, onException) {
   if (typeof onException !== 'function') {
     throw new TypeError('onException must be provided');

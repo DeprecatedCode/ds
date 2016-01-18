@@ -1,6 +1,19 @@
 DefaultScript.protoOverrides.array = {
+  each: function $logic$(boundScopes, boundStep, boundStepName, array, boundOnException) {
+    return function $logic$(scopes, step, stepName, forEach, onException) {
+      var mapOutput = remember(step, stepName, []);
+      return DefaultScript.walk(array, stepName, function (item) {
+        return transformPossiblePause(forEach(scopes, step, stepName, item, onException), function (value) {
+          mapOutput.push(value);
+        });
+      }, function () {
+        return mapOutput;
+      }, onException);
+    };
+  },
+
   filter: DefaultScript.systemMethod('@Array.filter',
-    'array: @it, {condition: @it, result: [], array {@it condition ? @it result.push, result}'
+    '@context: @it, {@condition: @it, @last: [], {@it @condition ? @it @last.push} @context.each, @last}'
   )
 };
 

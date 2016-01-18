@@ -9,31 +9,31 @@ path: 'path'  @require
 PORT: 9999
 
 methodNotAllowed: {
-  '> HTTP 405 Method Not Allowed' @console.log
+  '> HTTP 405 Method Not Allowed' @log
   405 response.writeHead,
   nil response.end
 }
 
 serverError: {
-  '> HTTP 500 Server Error' @console.log
+  '> HTTP 500 Server Error' @log
   500 response.writeHead,
   nil response.end
 }
 
 notFound: {
-  '> HTTP 404 Not Found' @console.log
+  '> HTTP 404 Not Found' @log
   404 response.writeHead,
   @args ['Not Found', 'utf-8'] response.end
 }
 
 redirect: {
-  '> HTTP 302 Redirect ' @it @console.log
+  '> HTTP 302 Redirect ' @it @log
   @args [302, @ {Location: @it}] response.writeHead
   nil response.end
 }
 
 ok: {
-  '> HTTP 200 OK (' content.length ' bytes)' @console.log
+  '> HTTP 200 OK (' content.length ' bytes)' @log
   @args [200, @ {'Content-Type': contentType}] response.writeHead
   @args [content, 'utf-8']                     response.end
 }
@@ -47,7 +47,7 @@ serveFile: {
     }
   )
 
-  'read ' filePath @console.log
+  'read ' filePath @log
 
   &{filePath: '.' filePath}
 
@@ -76,7 +76,7 @@ serveFile: {
 PORT (
   http.createServer @with (
     @named ['request', 'response'] {
-      'request ' request.method ' ' request.url @console.log
+      'request ' request.method ' ' request.url @log
 
       request.method = 'GET' {
         ? (
@@ -97,4 +97,4 @@ PORT (
   )
 ).listen
 
-'Server running at http://127.0.0.1:' PORT '/' @console.log
+'Server running at http://127.0.0.1:' PORT '/' @log

@@ -35,11 +35,18 @@ DefaultScript.logic = function (createdScopes, block, name) {
 
     var lastStep;
     var lastStepName;
+    var suppressEvaluation;
 
     return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
       if (step !== END) {
         lastStep = step;
         lastStepName = stepName;
+      }
+
+      if (suppressEvaluation) {
+        if (step === END || step[TYPE] === BREAK) {
+          suppressEvaluation = false;
+        }
       }
 
       if (step === END || step[TYPE] === BREAK) {
@@ -58,6 +65,15 @@ DefaultScript.logic = function (createdScopes, block, name) {
             return transformPossiblePause(DefaultScript.set(allScopes, lastStep, lastStepName, key, value, onException), function () {
               key = [];
             });
+          }
+        });
+      }
+
+      else if (step[TYPE] === OPERATOR && step[SOURCE] === '?') {
+        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, onException), function (conditionValue) {
+          stack = [];
+          if (!conditionValue) {
+            suppressEvaluation = true;
           }
         });
       }
@@ -95,7 +111,6 @@ DefaultScript.logic = function (createdScopes, block, name) {
         setTimeout(resume, 10);
       });
     }, function () {
-      console.log('RETURN', returnValue, name)
       return returnValue !== EMPTY ? returnValue : scopes[0];
     }, onException);
   });
