@@ -51,11 +51,11 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
 
       else {
         state = STATE_NAME;
-        return transformPossiblePause(DefaultScript.get(value === EMPTY ? scopes : [value], step, stepName), function (_value_) {
+        return transformPossiblePause(DefaultScript.get(value === EMPTY ? scopes : [value], step, stepName, undefined, onException), function (_value_) {
           if (typeof _value_ === 'undefined') {
             // DEBUG
-            DefaultScript.global.log('Value:', value);
-            DefaultScript.global.log('Scopes:', scopes);
+            // DefaultScript.global.log('Value:', value);
+            // DefaultScript.global.log('Scopes:', scopes);
 
             throw new Error(step[SOURCE] + ' is not defined');
           }
@@ -95,7 +95,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
     else {
       throw new Error('Invalid step to resolve: ' + JSON.stringify(step));
     }
-  }, function (resolve) {
-    resolve(value);
+  }, function () {
+    return value;
   }, onException);
 };

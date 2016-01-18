@@ -1,3 +1,9 @@
+DefaultScript.protoOverrides.array = {
+  filter: DefaultScript.systemMethod('@Array.filter',
+    'array: @it, {condition: @it, result: [], array {@it condition ? @it result.push, result}'
+  )
+};
+
 DefaultScript.array = function (scopes, block, name, onException) {
   if (typeof onException !== 'function') {
     throw new TypeError('onException must be provided');
@@ -18,13 +24,21 @@ DefaultScript.array = function (scopes, block, name, onException) {
     );
   };
 
+  var lastStep;
+  var lastStepName;
+
   return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-    if (step[TYPE] === BREAK) {
+    if (step !== END) {
+      lastStep = step;
+      lastStepName = stepName;
+    }
+
+    if (step === END || step[TYPE] === BREAK) {
       if (expectKey) {
         throw new Error('Key expected');
       }
 
-      return transformPossiblePause(DefaultScript.expression(scopes, step, stepName, stack, onException), function (value) {
+      return transformPossiblePause(DefaultScript.expression(scopes, lastStep, lastStepName, stack, onException), function (value) {
         stack = [];
 
         if (key.length === 0) {
@@ -32,7 +46,7 @@ DefaultScript.array = function (scopes, block, name, onException) {
         }
 
         else {
-          return transformPossiblePause(DefaultScript.set(scopes, step, stepName, key, value, onException), function () {
+          return transformPossiblePause(DefaultScript.set(scopes, lastStep, lastStepName, key, value, onException), function () {
             key = [];
           });
         }
@@ -71,7 +85,7 @@ DefaultScript.array = function (scopes, block, name, onException) {
     return DefaultScript.pause(function (resume) {
       setTimeout(resume, 10);
     });
-  }, function (resolve) {
-    resolve(remember(block, name, arrayValue));
+  }, function () {
+    return remember(block, name, arrayValue);
   }, onException);
 };

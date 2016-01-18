@@ -1,4 +1,4 @@
-DefaultScript.get = function (scopes, step, stepName, overrideKey) {
+DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) {
   if (step[TYPE] !== NAME && typeof overrideKey !== 'string') {
     throw new SyntaxError('Cannot get value');
   }
@@ -7,7 +7,8 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey) {
   var value;
 
   for (var i = 0; i < scopes.length; i++) {
-    if (typeof scopes[i] === 'undefined') {
+    var itemType = DefaultScript.global.type(scopes[i]);
+    if (itemType === 'undefined') {
       throw new TypeError('cannot get property ' + key + ' of undefined');
     }
 
@@ -15,7 +16,7 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey) {
       throw new TypeError('cannot get property ' + key + ' of null');
     }
 
-    if (typeof scopes[i] === 'object' && (key in scopes[i])) {
+    if (itemType === 'object' && (key in scopes[i])) {
       var val = scopes[i][key];
       if (DefaultScript.global.type(val) === 'function') {
         val = val.bind(scopes[i]);
@@ -23,9 +24,13 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey) {
       return val;
     }
 
+    if ((itemType in DefaultScript.protoOverrides) && (key in DefaultScript.protoOverrides[itemType])) {
+      return DefaultScript.protoOverrides[itemType][key]([], step, stepName, scopes[i], onException);
+    }
+
     var proto;
 
-    switch (typeof scopes[i]) {
+    switch (itemType) {
       case 'number':
         proto = Number;
         break;
@@ -39,10 +44,11 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey) {
         proto = Function;
         break;
       case 'object':
+      case 'array':
         proto = Object.getPrototypeOf(scopes[i]);
         break;
       default:
-        throw new Error('Invalid scope type: ' + (typeof scopes[i]));
+        throw new Error('Invalid scope type: ' + itemType);
     }
 
     if (proto && (key in proto)) {

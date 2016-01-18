@@ -18,13 +18,21 @@ DefaultScript.group = function (scopes, block, name, onException) {
     );
   };
 
+  var lastStep;
+  var lastStepName;
+
   return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-    if (step[TYPE] === BREAK) {
+    if (step !== END) {
+      lastStep = step;
+      lastStepName = stepName;
+    }
+
+    if (step === END || step[TYPE] === BREAK) {
       if (expectKey) {
         throw new Error('Key expected');
       }
 
-      return transformPossiblePause(DefaultScript.expression(scopes, step, stepName, stack, onException), function (value) {
+      return transformPossiblePause(DefaultScript.expression(scopes, lastStep, lastStepName, stack, onException), function (value) {
         stack = [];
 
         if (key.length === 0) {
@@ -32,7 +40,7 @@ DefaultScript.group = function (scopes, block, name, onException) {
         }
 
         else {
-          return transformPossiblePause(DefaultScript.set(scopes, step, stepName, key, value, onException), function () {
+          return transformPossiblePause(DefaultScript.set(scopes, lastStep, lastStepName, key, value, onException), function () {
             key = [];
           });
         }
@@ -71,7 +79,7 @@ DefaultScript.group = function (scopes, block, name, onException) {
     return DefaultScript.pause(function (resume) {
       setTimeout(resume, 10);
     });
-  }, function (resolve) {
-    resolve(returnValue !== EMPTY ? returnValue : undefined);
+  }, function () {
+    return returnValue !== EMPTY ? returnValue : undefined;
   }, onException);
 };

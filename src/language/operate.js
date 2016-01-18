@@ -57,7 +57,7 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
     else if (combinedOperator === '&') {
       if (leftType === 'empty') {
         if (rightType === 'empty') {
-          return transformPossiblePause(DefaultScript.get(scopes, step, stepName, '@it'), function (mergeValue) {
+          return transformPossiblePause(DefaultScript.get(scopes, step, stepName, '@it', onException), function (mergeValue) {
             var mergeType = DefaultScript.global.type(mergeValue);
             if (mergeType !== 'logic') {
               throw new Error('& merge: @it must be of type logic, not ' + mergeType);
@@ -93,14 +93,12 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
         return rightValue(scopes, step, stepName, leftValue, onException);
       }
 
-      else if (rightType === 'function') {
-        try {
-          return rightValue(leftValue);
-        }
+      else if (rightType === 'array' && leftType === 'number') {
+        return rightValue[leftValue];
+      }
 
-        catch (e) {
-          onException(e, step, stepName);
-        }
+      else if (rightType === 'function') {
+        return rightValue(leftValue);
       }
 
       else if (leftType === 'string') {
@@ -110,6 +108,7 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
       else {
         DefaultScript.global.log('Left:', leftValue);
         DefaultScript.global.log('Right:', rightValue);
+
         throw new Error('Invalid combination, ' + leftType + ' and ' + rightType);
       }
     });

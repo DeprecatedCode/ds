@@ -128,7 +128,7 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
     else /* has value or operation.length > 0 */ {
       right.push(step);
     }
-  }, function (resolve) {
-    resolve(value);
+  }, function () {
+    return value;
   }, onException);
 };

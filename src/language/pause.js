@@ -4,6 +4,7 @@ DefaultScript.pause = function (wait) {
 
   wait(function $resume$() {
     if (typeof done !== 'function') {
+      console.error((new Error).stack);
       throw noResume;
     }
 

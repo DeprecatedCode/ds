@@ -4,15 +4,12 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
   }
 
   var i = 0;
-  var paused = false;
-  var resume;
   var value;
   var lastStep;
+  var resolved = false;
   var resolve = function (_value_) {
+    resolved = true;
     value = _value_;
-    if (resume) {
-      resume(value);
-    }
   };
 
   var nextStep = function () {
@@ -22,7 +19,7 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
       }
 
       if (i >= sourceSteps.length) {
-        next(resolve);
+        return transformPossiblePause(next(), resolve);
       }
 
       else {
@@ -30,17 +27,10 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
           lastStep = sourceSteps[i];
         }
 
-        var handler = each(sourceSteps[i], sourceName);
-        i += 1;
-
-        if (typeof handler === 'function' && handler.name === '$pause$') {
-          handler(nextStep);
-          paused = true;
-        }
-
-        else {
-          nextStep();
-        }
+        return transformPossiblePause(each(sourceSteps[i], sourceName), function () {
+          i += 1;
+          return nextStep();
+        });
       }
     }
 
@@ -49,13 +39,13 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
     }
   };
 
-  nextStep();
+  var possiblePause = transformPossiblePause(nextStep(), function () {
+    return value;
+  });
 
-  if (!paused) {
+  if (resolved) {
     return value;
   }
 
-  return DefaultScript.pause(function (_resume_) {
-    resume = _resume_;
-  });
+  return possiblePause;
 };

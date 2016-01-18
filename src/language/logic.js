@@ -1,4 +1,6 @@
 DefaultScript.logic = function (createdScopes, block, name) {
+  block.push(END);
+
   if (!Array.isArray(createdScopes)) {
     throw new TypeError('Invalid use of logic([scope, ...])');
   }
@@ -11,7 +13,7 @@ DefaultScript.logic = function (createdScopes, block, name) {
     if (!Array.isArray(scopes)) {
       throw new TypeError('Invalid use of $logic$([scope, ...])');
     }
-console.log()
+
     var stack = [];
     var key = [];
     var expectKey = false;
@@ -20,9 +22,10 @@ console.log()
     var valueScopes = typeof value !== 'undefined' ? [{'@it': value}] : [];
     var allScopes = scopes.concat(valueScopes, createdScopes);
 
-    DefaultScript.global.beforeUnload(function (err) {
-      console.log(allScopes);
-    });
+    // DEBUG
+    // DefaultScript.global.beforeUnload(function (err) {
+    //   DefaultScript.global.log(allScopes);
+    // });
 
     var isNameOrDot = function (step) {
       return step[TYPE] === NAME || (
@@ -30,13 +33,21 @@ console.log()
       );
     };
 
+    var lastStep;
+    var lastStepName;
+
     return DefaultScript.walk(block[SOURCE], name, function (step, stepName) {
-      if (step[TYPE] === BREAK) {
+      if (step !== END) {
+        lastStep = step;
+        lastStepName = stepName;
+      }
+
+      if (step === END || step[TYPE] === BREAK) {
         if (expectKey) {
           throw new Error('Key expected');
         }
 
-        return transformPossiblePause(DefaultScript.expression(allScopes, step, stepName, stack, onException), function (value) {
+        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, onException), function (value) {
           stack = [];
 
           if (key.length === 0) {
@@ -44,7 +55,7 @@ console.log()
           }
 
           else {
-            return transformPossiblePause(DefaultScript.set(allScopes, step, stepName, key, value, onException), function () {
+            return transformPossiblePause(DefaultScript.set(allScopes, lastStep, lastStepName, key, value, onException), function () {
               key = [];
             });
           }
@@ -83,8 +94,9 @@ console.log()
       return DefaultScript.pause(function (resume) {
         setTimeout(resume, 10);
       });
-    }, function (resolve) {
-      resolve(returnValue !== EMPTY ? returnValue : scopes);
+    }, function () {
+      console.log('RETURN', returnValue, name)
+      return returnValue !== EMPTY ? returnValue : scopes[0];
     }, onException);
   });
 };

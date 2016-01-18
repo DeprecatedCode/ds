@@ -31,14 +31,18 @@ g.transformPossiblePause = function (result, transform) {
   if (typeof result === 'function' && result.name === '$pause$') {
     return g.DefaultScript.pause(function (resume) {
       result(function (value) {
-        var transformedValue = transform(value);
-        console.log('TV', transformedValue);
-        return g.transformPossiblePause(transformedValue, resume);
+        return g.transformPossiblePause(value, function (liberatedValue) {
+          if (typeof transform === 'function') {
+            var transformedValue = transform(liberatedValue);
+            return g.transformPossiblePause(transformedValue, resume);
+          }
+          return resume(liberatedValue);
+        });
       });
     });
   }
 
-  return transform(result);
+  return typeof transform === 'function' ? transform(result) : result;
 };
 
 g.resumeCallback = function (result) {
@@ -91,25 +95,30 @@ require('./src/global/standard');
 require('./src/global/test');
 require('./src/global/type');
 
-require('./src/language/array');
 require('./src/language/block');
+require('./src/language/literals');
+require('./src/language/parse');
+require('./src/language/syntax');
+require('./src/language/token');
+
+require('./src/language/logic');
+require('./src/language/onException');
+require('./src/language/protoOverrides');
+require('./src/language/systemMethod');
+
+require('./src/language/array');
 require('./src/language/combine');
 require('./src/language/expression');
 require('./src/language/get');
 require('./src/language/group');
 require('./src/language/import');
 require('./src/language/index');
-require('./src/language/literals');
-require('./src/language/logic');
 require('./src/language/operate');
-require('./src/language/parse');
 require('./src/language/pause');
 require('./src/language/resolve');
 require('./src/language/run');
 require('./src/language/set');
 require('./src/language/string');
-require('./src/language/syntax');
-require('./src/language/token');
 require('./src/language/walk');
 
 DefaultScript.run();
