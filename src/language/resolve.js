@@ -54,8 +54,8 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
         return transformPossiblePause(DefaultScript.get(value === EMPTY ? scopes : [value], step, stepName), function (_value_) {
           if (typeof _value_ === 'undefined') {
             // DEBUG
-            // DefaultScript.global.log('Value:', value);
-            // DefaultScript.global.log('Scopes:', scopes);
+            DefaultScript.global.log('Value:', value);
+            DefaultScript.global.log('Scopes:', scopes);
 
             throw new Error(step[SOURCE] + ' is not defined');
           }

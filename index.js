@@ -31,7 +31,9 @@ g.transformPossiblePause = function (result, transform) {
   if (typeof result === 'function' && result.name === '$pause$') {
     return g.DefaultScript.pause(function (resume) {
       result(function (value) {
-        resume(transform(value));
+        var transformedValue = transform(value);
+        console.log('TV', transformedValue);
+        return g.transformPossiblePause(transformedValue, resume);
       });
     });
   }
@@ -78,6 +80,7 @@ g.remember = function (step, stepName, fn) {
   return fn;
 };
 
+require('./src/global/beforeUnload');
 require('./src/global/deferred');
 require('./src/global/expect');
 require('./src/global/format');

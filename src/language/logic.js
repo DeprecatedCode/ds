@@ -11,17 +11,18 @@ DefaultScript.logic = function (createdScopes, block, name) {
     if (!Array.isArray(scopes)) {
       throw new TypeError('Invalid use of $logic$([scope, ...])');
     }
-
+console.log()
     var stack = [];
     var key = [];
     var expectKey = false;
     var returnValue = EMPTY;
 
-    var allScopes = scopes.concat(createdScopes);
+    var valueScopes = typeof value !== 'undefined' ? [{'@it': value}] : [];
+    var allScopes = scopes.concat(valueScopes, createdScopes);
 
-    if (typeof value !== 'undefined') {
-      allScopes = [{'@it': value}].concat(allScopes);
-    }
+    DefaultScript.global.beforeUnload(function (err) {
+      console.log(allScopes);
+    });
 
     var isNameOrDot = function (step) {
       return step[TYPE] === NAME || (

@@ -1,9 +1,9 @@
-DefaultScript.get = function (scopes, step, stepName) {
-  if (step[TYPE] !== NAME) {
+DefaultScript.get = function (scopes, step, stepName, overrideKey) {
+  if (step[TYPE] !== NAME && typeof overrideKey !== 'string') {
     throw new SyntaxError('Cannot get value');
   }
 
-  var key = step[SOURCE];
+  var key = overrideKey || step[SOURCE];
   var value;
 
   for (var i = 0; i < scopes.length; i++) {

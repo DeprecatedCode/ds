@@ -7,6 +7,10 @@ DefaultScript.global.type = function $bust$(thing) {
     return 'null';
   }
 
+  if (thing === EMPTY) {
+    return 'empty';
+  }
+
   if (typeof thing === 'object' && thing.$state$) {
     return 'scope';
   }

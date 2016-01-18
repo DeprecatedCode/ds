@@ -8,10 +8,10 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
   }
 
   // DEBUG
-  DefaultScript.global.log('Operate:');
-  DefaultScript.global.log('Left = ', leftValue);
-  DefaultScript.global.log('Operation:', operation);
-  DefaultScript.global.log('Right = ', right);
+  // DefaultScript.global.log('Operate:');
+  // DefaultScript.global.log('Left = ', leftValue);
+  // DefaultScript.global.log('Operation:', operation);
+  // DefaultScript.global.log('Right = ', right);
 
   if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
     DefaultScript.global.log('B', right);
@@ -44,6 +44,36 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
 
     else if (combinedOperator === '/') {
       return leftValue / rightValue;
+    }
+
+    else if (combinedOperator === '=') {
+      return leftValue === rightValue;
+    }
+
+    else if (combinedOperator === '!=') {
+      return leftValue !== rightValue;
+    }
+
+    else if (combinedOperator === '&') {
+      if (leftType === 'empty') {
+        if (rightType === 'empty') {
+          return transformPossiblePause(DefaultScript.get(scopes, step, stepName, '@it'), function (mergeValue) {
+            var mergeType = DefaultScript.global.type(mergeValue);
+            if (mergeType !== 'logic') {
+              throw new Error('& merge: @it must be of type logic, not ' + mergeType);
+            }
+            return mergeValue(scopes, step, stepName, undefined, onException);
+          });
+        }
+
+        else {
+          throw new Error;
+        }
+      }
+
+      else {
+        throw new Error;
+      }
     }
 
     else {

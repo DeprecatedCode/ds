@@ -2,7 +2,7 @@ DefaultScript.global.format = function (item) {
   var type =  DefaultScript.global.type(item);
   var more;
   var restrict = function (array) {
-    var max = 3;
+    var max = 10;
     more = 0;
     if (array.length > max) {
       more = array.length - max

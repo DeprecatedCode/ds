@@ -4,6 +4,7 @@ DefaultScript.run = function () {
       throw new Error('Cannot provide END as step to error()');
     }
 
+
     var desc;
 
     if (!step || !stepName) {
@@ -17,6 +18,8 @@ DefaultScript.run = function () {
     else {
       desc = DefaultScript.tokenTypes[step[TYPE]].toLowerCase();
     }
+
+    DefaultScript.beforeUnload(err);
 
     console.error('[ds] No receiver for raised event: \n' + step[POSITION].getSource(true) + '\n@' + err.name + ': ' +
       err.message + ' near ' + desc + ' at ' + step[POSITION]());
@@ -58,7 +61,7 @@ DefaultScript.run = function () {
         var logic = DefaultScript.logic([], DefaultScript.parse(source, onException), name);
         var scopes = [DefaultScript.global.scope()];
         DefaultScript.global.log('E', logic)
-        return resumeCallback(logic(scopes, null, name, EMPTY, onException));
+        return resumeCallback(logic(scopes, null, name, undefined, onException));
       };
     }
   }
