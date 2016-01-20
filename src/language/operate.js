@@ -50,36 +50,70 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
       return leftValue === rightValue;
     }
 
-    else if (combinedOperator === '!=') {
+    else if (combinedOperator === '<>') {
       return leftValue !== rightValue;
     }
 
     else if (combinedOperator === '&') {
+      /**
+       * Rules:
+       * {& foo} .............. evaluate logic foo in context
+       * {foo &} .............. merge context into foo
+       * foo {&} .............. evaluate logic foo (@it) in context
+       * {bar & foo} .......... evaluate logic foo in bar
+       * foo {bar &} .......... evaluate logic foo (@it) in bar
+       * foo {& bar} .......... evaluate logic bar in context, providing foo as @it to bar
+
+       * foo [1, 2, &, 4] ..... concat array foo in context
+       * [1, 2, & foo, 4] ..... concat array foo in context
+       * [1, 2, foo &, 4] ..... append context values to foo
+       * foo & [1, 2, 3] ...... concat context onto foo
+       * [1, 2, 3] & foo ...... concat foo into context
+       */
       if (leftType === 'empty') {
-        if (rightType === 'empty') {
-          return transformPossiblePause(DefaultScript.get(scopes, step, stepName, '@it', onException), function (mergeValue) {
-            var mergeType = DefaultScript.global.type(mergeValue);
-            if (mergeType !== 'logic') {
-              throw new Error('& merge: @it must be of type logic, not ' + mergeType);
-            }
-            return mergeValue(scopes, step, stepName, undefined, onException);
-          });
+        leftValue = scopes[0];
+        leftType = DefaultScript.global.type(leftValue);
+      }
+
+      var merge = function (mergeValue, mergeType) {
+        if (leftType === 'array') {
+          if (mergeType !== 'array') {
+            throw new Error('& merge: value must be of type array, not ' + mergeType);
+          }
+          leftValue.push.apply(leftValue, mergeValue);
+          return EMPTY;
+        }
+
+        else if (leftType === 'object') {
+          if (mergeType !== 'logic') {
+            throw new Error('& merge: value must be of type logic, not ' + mergeType);
+          }
+          return mergeValue([leftValue].concat(scopes), step, stepName, undefined, onException);
         }
 
         else {
           throw new Error;
         }
+      };
+
+      if (rightType === 'empty') {
+        return transformPossiblePause(DefaultScript.get(scopes, step, stepName, '@it', onException), function (value) {
+          return merge(value, DefaultScript.global.type(value));
+        });
       }
 
-      else {
-        throw new Error;
-      }
+      return merge(rightValue, rightType);
     }
 
     else {
       throw new Error('Operation ' + combinedOperator + ' not implemented');
     }
   };
+
+  if (operation.length > 0 && operation[0][SOURCE] === '!') {
+    leftValue = !leftValue;
+    operation.shift();
+  }
 
   if (operation.length === 0) {
     if (right.length === 0) {

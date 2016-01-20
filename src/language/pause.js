@@ -31,8 +31,6 @@ DefaultScript.pause = function (wait) {
 
     // If the result is a pause, we did something wrong
     if (typeof result === 'function' && result.name === '$pause$') {
-      debugger
-
       throw tooManyPause;
     }
   });

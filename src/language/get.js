@@ -1,10 +1,10 @@
 DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) {
   if (step[TYPE] !== NAME && typeof overrideKey !== 'string') {
-    throw new SyntaxError('Cannot get value');
+    throw new SyntaxError('Cannot get val');
   }
 
   var key = overrideKey || step[SOURCE];
-  var value;
+  var val;
 
   for (var i = 0; i < scopes.length; i++) {
     var itemType = DefaultScript.global.type(scopes[i]);
@@ -24,9 +24,24 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
       return val;
     }
 
-    if ((itemType in DefaultScript.protoOverrides) && (key in DefaultScript.protoOverrides[itemType])) {
-      var logic = DefaultScript.protoOverrides[itemType][key];
-      return logic([], step, stepName, scopes[i], onException);
+    if (itemType in DefaultScript.protoOverrides) {
+      var property = DefaultScript.protoOverrides[itemType][key];
+
+      if (typeof property === 'string') {
+        val = scopes[i][property];
+        if (DefaultScript.global.type(val) === 'function') {
+          val = val.bind(scopes[i]);
+        }
+        return val;
+      }
+
+      else if (typeof property === 'function') {
+        return property([], step, stepName, scopes[i], onException);
+      }
+
+      else {
+        continue;
+      }
     }
 
     var proto;

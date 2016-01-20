@@ -1,4 +1,9 @@
 DefaultScript.protoOverrides.array = {
+  concat: 'concat',
+  indexOf: 'indexOf',
+  length: 'length',
+  push: 'push',
+
   each: function $logic$(boundScopes, boundStep, boundStepName, array, boundOnException) {
     return function $logic$(scopes, step, stepName, forEach, onException) {
       var mapOutput = remember(step, stepName, []);
@@ -12,8 +17,14 @@ DefaultScript.protoOverrides.array = {
     };
   },
 
+  join: function $logic$(boundScopes, boundStep, boundStepName, array, boundOnException) {
+    return function $logic$(scopes, step, stepName, value, onException) {
+      return array.join(value);
+    };
+  },
+
   filter: DefaultScript.systemMethod('@Array.filter',
-    '@context: @it, {@condition: @it, @last: [], {@it @condition ? @it @last.push} @context.each, @last}'
+    'arr: @it, {cond: @it, result: [], {@it cond ? @it result.push} arr.each, result}'
   )
 };
 
@@ -29,7 +40,7 @@ DefaultScript.array = function (scopes, block, name, onException) {
   var stack = [];
   var key = [];
   var expectKey = false;
-  var arrayValue = [];
+  var arrayValue = scopes[0];
 
   var isNameOrDot = function (step) {
     return step[TYPE] === NAME || (
@@ -55,7 +66,9 @@ DefaultScript.array = function (scopes, block, name, onException) {
         stack = [];
 
         if (key.length === 0) {
-          arrayValue.push(value);
+          if (value !== EMPTY) {
+            arrayValue.push(value);
+          }
         }
 
         else {
@@ -95,9 +108,9 @@ DefaultScript.array = function (scopes, block, name, onException) {
       stack.push(step);
     }
 
-    return DefaultScript.pause(function (resume) {
-      setTimeout(resume, 10);
-    });
+    if (DefaultScript.tickCallback) {
+      return DefaultScript.pause(DefaultScript.tickCallback);
+    }
   }, function () {
     return remember(block, name, arrayValue);
   }, onException);

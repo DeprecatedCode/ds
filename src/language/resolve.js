@@ -75,7 +75,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
 
     else if (step[TYPE] === GROUP) {
       state = STATE_VALUE;
-      return transformPossiblePause(DefaultScript.group(scopes, step, stepName, onException), function (_value_) {
+      return transformPossiblePause(DefaultScript.group([{}].concat(scopes), step, stepName, onException), function (_value_) {
         value = _value_;
       });
     }
@@ -87,7 +87,7 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
 
     else if (step[TYPE] === ARRAY) {
       state = STATE_VALUE;
-      return transformPossiblePause(DefaultScript.array(scopes, step, stepName, onException), function (_value_) {
+      return transformPossiblePause(DefaultScript.array([[]].concat(scopes), step, stepName, onException), function (_value_) {
         value = _value_;
       });
     }

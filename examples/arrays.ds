@@ -1,4 +1,4 @@
-L: @log
+L: @console.log
 
 '--------------------------------'                               L
 'DefaultScript Test Suite: Arrays'                               L
@@ -8,7 +8,7 @@ cart: ['apple', 'banana', 'carrot', 'apple', 'beet']
 
 '1: There are ' cart.length ' items in the cart.'                L
 
-isFruit: {@it ['apple', 'banana', 'orange'].indexOf != -1}
+isFruit: {@it ['apple', 'banana', 'orange'].indexOf <> -1}
 
 '2: Is an apple a fruit? ' ('apple' isFruit)                     L
 
@@ -16,23 +16,20 @@ truckTalk: {&, '3: ' (0 colors) ' fire trucks are everywhere.'}
 
 {colors: ['Red', 'Blue']} truckTalk                              L
 
-fruitOnly: isFruit cart.filter
-
-'TESTTEST' @log
-fruitOnly @log
-
 exclude: {
-  @it @log
   filter: @it.filter
   {condition: @it, {@it condition !} filter}
 }
 
+fruitOnly: isFruit cart.filter
 nonFruit: isFruit (cart exclude)
 
-'4: The cart has ' fruitOnly.length ' fruits and '     \
+'4: The cart has ' fruitOnly.length ' fruits and ' \
                 nonFruit.length  ' other items in it.'           L
 
-'5: The ' (1 ['first', 'second'])            \
+ordinals: ['first', 'second', 'third']
+
+'5: The ' (1 ordinals) \
   ' item in the cart is a delicious yellow ' \
   (1 cart) '.'                                                   L
 

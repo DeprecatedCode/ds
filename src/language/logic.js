@@ -20,7 +20,7 @@ DefaultScript.logic = function (createdScopes, block, name) {
     var returnValue = EMPTY;
 
     var valueScopes = typeof value !== 'undefined' ? [{'@it': value}] : [];
-    var allScopes = scopes.concat(valueScopes, createdScopes);
+    var allScopes = valueScopes.concat(scopes, createdScopes);
 
     // DEBUG
     // DefaultScript.global.beforeUnload(function (err) {
@@ -45,8 +45,12 @@ DefaultScript.logic = function (createdScopes, block, name) {
 
       if (suppressEvaluation) {
         if (step === END || step[TYPE] === BREAK) {
+          stack = [];
+          key = [];
+          expectKey = false;
           suppressEvaluation = false;
         }
+        return;
       }
 
       if (step === END || step[TYPE] === BREAK) {
@@ -107,9 +111,9 @@ DefaultScript.logic = function (createdScopes, block, name) {
         stack.push(step);
       }
 
-      return DefaultScript.pause(function (resume) {
-        setTimeout(resume, 10);
-      });
+      if (DefaultScript.tickCallback) {
+        return DefaultScript.pause(DefaultScript.tickCallback);
+      }
     }, function () {
       return returnValue !== EMPTY ? returnValue : scopes[0];
     }, onException);

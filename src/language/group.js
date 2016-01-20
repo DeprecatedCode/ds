@@ -76,9 +76,9 @@ DefaultScript.group = function (scopes, block, name, onException) {
       stack.push(step);
     }
 
-    return DefaultScript.pause(function (resume) {
-      setTimeout(resume, 10);
-    });
+    if (DefaultScript.tickCallback) {
+      return DefaultScript.pause(DefaultScript.tickCallback);
+    }
   }, function () {
     return returnValue !== EMPTY ? returnValue : undefined;
   }, onException);

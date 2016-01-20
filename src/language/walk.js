@@ -3,6 +3,10 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
     throw new TypeError('onException must be provided');
   }
 
+  if (!Array.isArray(sourceSteps)) {
+    throw new Error('Array must be provided to walk(sourceSteps)');
+  }
+
   var i = 0;
   var value;
   var lastStep;
@@ -38,9 +42,7 @@ DefaultScript.walk = function (sourceSteps, sourceName, each, next, onException)
     }
   };
 
-  var possiblePause = transformPossiblePause(nextStep(), function () {
-    return value;
-  });
+  var possiblePause = nextStep();
 
   if (resolved) {
     return value;

@@ -23,23 +23,29 @@ g.DefaultScript = {
   ]
 };
 
+// g.DefaultScript.tickCallback = function (resume) {
+//   setTimeout(resume, 100);
+// };
+
 g.isBrowser = typeof window === 'object';
 g.isNode = typeof global === 'object' && typeof require === 'function';
 g.isMain = g.isNode && require.main === module;
 
 g.transformPossiblePause = function (original, transform) {
-  if (typeof original === 'function' && original.name === '$pause$') {
-    original.onResume = function (resume) {
-      pause.done = function (value) {
-        if (typeof transform === 'function') {
-          return resume(transform(value));
-        }
-        return resume(value);
-      }
-    }
+  if (typeof transform !== 'function') {
+    throw new Error('Missing transform');
   }
 
-  return typeof transform === 'function' ? transform(original) : original;
+  if (typeof original === 'function' && original.name === '$pause$') {
+    original.onResume = function (resume) {
+      original.done = function (value) {
+        return resume(transform(value));
+      }
+    };
+    return original;
+  }
+
+  return transform(original);
 };
 
 g.resumeCallback = function (result) {
