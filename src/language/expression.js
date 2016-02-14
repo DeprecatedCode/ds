@@ -1,4 +1,4 @@
-DefaultScript.expression = function (scopes, step, triggerStepName, expression, onException) {
+DefaultScript.expression = function (scopes, step, triggerStepName, expression, value, onException) {
   if (typeof onException !== 'function') {
     throw new TypeError('onException must be provided');
   }
@@ -7,7 +7,6 @@ DefaultScript.expression = function (scopes, step, triggerStepName, expression, 
   var left = [];
   var right = [];
   var operation = [];
-  var value = EMPTY;
   var lastStep;
   var lastStepName;
   expression.push(END);

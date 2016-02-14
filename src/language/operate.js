@@ -8,10 +8,8 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
   }
 
   // DEBUG
-  // DefaultScript.global.log('Operate:');
-  // DefaultScript.global.log('Left = ', leftValue);
-  // DefaultScript.global.log('Operation:', operation);
-  // DefaultScript.global.log('Right = ', right);
+  DefaultScript.global.console.log('Operate left, operation, right:');
+  DefaultScript.global.log(leftValue, operation, right);
 
   if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
     DefaultScript.global.log('B', right);
@@ -35,6 +33,7 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
     }
 
     else if (combinedOperator === '-') {
+      console.log(leftValue, rightValue)
       return leftValue - rightValue;
     }
 

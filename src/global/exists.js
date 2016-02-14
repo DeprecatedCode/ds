@@ -1,23 +1,17 @@
-DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) {
-  if (step[TYPE] !== NAME && typeof overrideKey !== 'string') {
-    throw new SyntaxError('Cannot get val');
+DefaultScript.global.exists = remember(null, '@exists', function $logic$(scopes, step, stepName, key, onException) {
+  if (typeof key !== 'string') {
+    throw new SyntaxError('Cannot determine if name exists');
   }
 
-  var key = overrideKey || step[SOURCE];
-  var val;
-
-  if (key in DefaultScript.literals) {
-    return DefaultScript.literals[key];
-  }
 
   for (var i = 0; i < scopes.length; i++) {
     var itemType = DefaultScript.global.type(scopes[i]);
     if (itemType === 'undefined') {
-      throw new TypeError('cannot get property ' + key + ' of undefined');
+      return false;
     }
 
     if (scopes[i] === null) {
-      throw new TypeError('cannot get property ' + key + ' of null');
+      return false;
     }
 
     if (itemType === 'object' && (key in scopes[i])) {
@@ -25,7 +19,7 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
       if (DefaultScript.global.type(val) === 'function') {
         val = val.bind(scopes[i]);
       }
-      return val;
+      return val !== undefined;
     }
 
     if (itemType in DefaultScript.protoOverrides) {
@@ -36,11 +30,11 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
         if (DefaultScript.global.type(val) === 'function') {
           val = val.bind(scopes[i]);
         }
-        return val;
+        return val !== undefined;;
       }
 
       else if (typeof property === 'function') {
-        return property([], step, stepName, scopes[i], onException);
+        return true;
       }
 
       else {
@@ -52,7 +46,7 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
 
     switch (itemType) {
       case 'logic':
-        throw new Error('Cannot read property ' + key + ' of logic block');
+        return false;
       case 'number':
         proto = Number;
         break;
@@ -78,14 +72,16 @@ DefaultScript.get = function (scopes, step, stepName, overrideKey, onException) 
       if (DefaultScript.global.type(val) === 'function') {
         val = val.bind(scopes[i]);
       }
-      return val;
+      return val !== undefined;
     }
   }
 
   if (key[0] === '@') {
     var globalKey = key.substr(1);
     if (globalKey in DefaultScript.global) {
-      return DefaultScript.global[globalKey];
+      return globalKey in DefaultScript.global;
     }
   }
-};
+
+  return false;
+});

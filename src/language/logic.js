@@ -58,7 +58,7 @@ DefaultScript.logic = function (createdScopes, block, name) {
           throw new Error('Key expected');
         }
 
-        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, onException), function (value) {
+        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, EMPTY, onException), function (value) {
           stack = [];
 
           if (key.length === 0) {
@@ -74,7 +74,18 @@ DefaultScript.logic = function (createdScopes, block, name) {
       }
 
       else if (step[TYPE] === OPERATOR && step[SOURCE] === '?') {
-        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, onException), function (conditionValue) {
+        if (stack.length > 0) {
+          // auto-prepend = when first stack item before ? is not an operator
+          var firstStackItem = stack[0];
+          if (firstStackItem[TYPE] !== OPERATOR) {
+            var impliedEqualsOperator = [];
+            impliedEqualsOperator[POSITION] = firstStackItem[POSITION];
+            impliedEqualsOperator[TYPE] = OPERATOR;
+            impliedEqualsOperator[SOURCE] = '=';
+            stack.unshift(impliedEqualsOperator);
+          }
+        }
+        return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, value, onException), function (conditionValue) {
           stack = [];
           if (!conditionValue) {
             suppressEvaluation = true;

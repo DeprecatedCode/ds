@@ -89,6 +89,7 @@ g.remember = function (step, stepName, fn) {
 
 require('./src/global/beforeUnload');
 require('./src/global/deferred');
+require('./src/global/exists');
 require('./src/global/expect');
 require('./src/global/format');
 require('./src/global/log');
@@ -110,7 +111,6 @@ require('./src/language/protoOverrides');
 require('./src/language/systemMethod');
 
 require('./src/language/array');
-require('./src/language/combine');
 require('./src/language/expression');
 require('./src/language/get');
 require('./src/language/group');

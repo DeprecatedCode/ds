@@ -32,7 +32,7 @@ DefaultScript.group = function (scopes, block, name, onException) {
         throw new Error('Key expected');
       }
 
-      return transformPossiblePause(DefaultScript.expression(scopes, lastStep, lastStepName, stack, onException), function (value) {
+      return transformPossiblePause(DefaultScript.expression(scopes, lastStep, lastStepName, stack, EMPTY, onException), function (value) {
         stack = [];
 
         if (key.length === 0) {
