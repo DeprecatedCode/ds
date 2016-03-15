@@ -20,8 +20,8 @@ DefaultScript.global.html = remember(null, '@html', function $trap$(scopes, step
         return onException(new TypeError('<' + tag + '> tag definition must be a string or logic block'), step, stepName);
       }
 
-console.log(tag)
-    }
+      var newNode = createChildNode(this);
+      newNode.fragment.push('<' + tag + '>');
   });
 
   var createChildNode = function (parent) {
