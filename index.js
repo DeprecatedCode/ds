@@ -6,6 +6,7 @@
  * @location Ann Arbor, MI
  * @date Thursday, November 26th, 2015
  * @date Saturday, January 9th, 2016
+ * @date Monday, March 14th, 2016
  * @desc Full DefaultScript engine rewrite for modularity and extensibility.
  */
 var g = typeof global === 'object' ? global : window;
@@ -92,7 +93,10 @@ require('./src/global/deferred');
 require('./src/global/exists');
 require('./src/global/expect');
 require('./src/global/format');
+require('./src/global/html');
+require('./src/global/http');
 require('./src/global/log');
+require('./src/global/print');
 require('./src/global/request');
 require('./src/global/scope');
 require('./src/global/standard');

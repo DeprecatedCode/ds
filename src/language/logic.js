@@ -55,7 +55,14 @@ DefaultScript.logic = function (createdScopes, block, name) {
 
       if (step === END || step[TYPE] === BREAK) {
         if (expectKey) {
-          throw new Error('Key expected');
+          if (key.length && stack.length === 0) {
+            stack = key.slice();
+            expectKey = false;
+          }
+
+          else {
+            throw new Error('Key expected');
+          }
         }
 
         return transformPossiblePause(DefaultScript.expression(allScopes, lastStep, lastStepName, stack, EMPTY, onException), function (value) {

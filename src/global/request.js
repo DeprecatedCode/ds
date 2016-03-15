@@ -13,19 +13,19 @@ if (isBrowser) {
       config.method = 'POST';
     }
 
-		var x = new(window.XMLHttpRequest || ActiveXObject)('MSXML2.XMLHTTP.3.0');
-		x.open(config.method, config.url, 1);
-		x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-		x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-		x.send(config.data);
+    var x = new(window.XMLHttpRequest || ActiveXObject)('MSXML2.XMLHTTP.3.0');
+    x.open(config.method, config.url, 1);
+    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    x.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    x.send(config.data);
 
     return function (callback) {
       if (typeof callback !== 'function') {
         throw new Error('Invalid use of @request');
       }
-  		x.onreadystatechange = function () {
-  			x.readyState > 3 && callback(x.responseText, x);
-  		};
+      x.onreadystatechange = function () {
+        x.readyState > 3 && callback(x.responseText, x);
+      };
     };
   };
 }

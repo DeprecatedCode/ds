@@ -1,0 +1,28 @@
+@http {
+  requestFilter {
+    &{:request} @log
+  }
+
+  responseFilter {
+    &{:response} @log
+  }
+
+  get '/' {
+    @html {
+      doctype 'html'
+
+      head {
+        title 'DefaultScript is amazing'
+      }
+
+      body {
+
+      }
+    } ok
+  }
+
+  8080 {
+    'Listening on port ' @it @print
+    listen @it
+  }
+}

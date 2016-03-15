@@ -8,13 +8,12 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
   }
 
   // DEBUG
-  DefaultScript.global.console.log('Operate left, operation, right:');
-  DefaultScript.global.log(leftValue, operation, right);
+  //DefaultScript.global.console.log('Operate left, operation, right:');
+  //DefaultScript.global.log(leftValue, operation, right);
 
   if (DefaultScript.global.type(leftValue) === 'logic' && leftValue.name === '$trap$') {
-    DefaultScript.global.log('B', right);
-    return DefaultScript.resolve(scopes, step, stepName, right, function (rightValue) {
-      return leftValue(scopes, step, stepName, rightValue);
+    return transformPossiblePause(DefaultScript.resolve(scopes, step, stepName, right, false, onException), function (rightValue) {
+      return leftValue(scopes, step, stepName, rightValue, onException);
     });
   }
 
@@ -33,7 +32,7 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
     }
 
     else if (combinedOperator === '-') {
-      console.log(leftValue, rightValue)
+      //console.log(leftValue, rightValue)
       return leftValue - rightValue;
     }
 
@@ -135,7 +134,11 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
       }
 
       else if (leftType === 'string') {
-        return leftValue + String(rightValue);
+        if (rightType !== 'string') {
+          return leftValue + DefaultScript.global.format(rightValue);
+        }
+
+        return leftValue + rightValue;
       }
 
       else {

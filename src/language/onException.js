@@ -1,4 +1,8 @@
 DefaultScript.onException = function (err, step, stepName) {
+  if (!(err instanceof Error)) {
+    throw new Error('Must provide an instance of Error to onException');
+  }
+
   if (step === END) {
     throw new Error('Cannot provide END as step to error()');
   }

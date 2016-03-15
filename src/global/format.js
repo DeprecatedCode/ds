@@ -17,7 +17,7 @@ DefaultScript.global.format = function (item) {
     var items = restrict(item).map(DefaultScript.global.format);
 
     if (more > 0) {
-      items = items.concat(['...(' + more + ' more)']);
+      items = items.concat(['... (' + more + ' more)']);
     }
 
     var itemsCommaSpace = items.join(', ');
@@ -48,7 +48,7 @@ DefaultScript.global.format = function (item) {
     });
 
     if (more > 0) {
-      items = items.concat(['...(' + more + ' more)']);
+      items = items.concat(['... (' + more + ' more)']);
     }
 
     var itemsCommaSpace = items.join(', ');
@@ -63,7 +63,13 @@ DefaultScript.global.format = function (item) {
   }
 
   if (type === 'string') {
-    return ["'", item, "'"].join('');
+    var extra = '';
+    var len = item.length;
+    if (len > 40) {
+      item = item.substr(0, 40);
+      extra = ' ... (' + (len - item.length) + ' more)';
+    }
+    return ["'", item.replace(/\n/g, '\\n'), "'", extra].join('');
   }
 
   if (type === 'number' ||
