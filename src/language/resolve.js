@@ -10,9 +10,9 @@ DefaultScript.resolve = function (scopes, step, triggerStepName, stack, createOn
   const STATE_DECIMAL = 4;
 
   // DEBUG
-  // DefaultScript.global.log('Resolve:', stack.map(function (s) {
-  //   return s[SOURCE];
-  // }));
+  DefaultScript.global.log('Resolve:', stack.map(function (s) {
+    return s[SOURCE];
+  }));
 
   var value = EMPTY;
   var state = EMPTY;

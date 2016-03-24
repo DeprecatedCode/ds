@@ -1,0 +1,2 @@
+DefaultScript.protoOverrides.number = {
+};

@@ -120,6 +120,7 @@ require('./src/language/get');
 require('./src/language/group');
 require('./src/language/import');
 require('./src/language/index');
+require('./src/language/number');
 require('./src/language/operate');
 require('./src/language/pause');
 require('./src/language/resolve');

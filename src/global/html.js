@@ -22,6 +22,7 @@ DefaultScript.global.html = remember(null, '@html', function $trap$(scopes, step
 
       var newNode = createChildNode(this);
       newNode.fragment.push('<' + tag + '>');
+    };
   });
 
   var createChildNode = function (parent) {

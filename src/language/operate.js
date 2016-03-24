@@ -52,6 +52,24 @@ DefaultScript.operate = function (scopes, step, stepName, leftValue, operation, 
       return leftValue !== rightValue;
     }
 
+    else if (combinedOperator === '>>') {
+      var current = leftValue;
+      var arr = [current];
+      while (++current <= rightValue) {
+        arr.push(current);
+      }
+      return arr;
+    }
+
+    else if (combinedOperator === '<<') {
+      var current = leftValue;
+      var arr = [current];
+      while (--current >= rightValue) {
+        arr.push(current);
+      }
+      return arr;
+    }
+
     else if (combinedOperator === '&') {
       /**
        * Rules:
